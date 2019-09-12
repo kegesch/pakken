@@ -1,0 +1,7 @@
+[package]
+name = "pakken"
+version = "0.1.0"
+authors = ["Jonas Geschke <mail@yonny.de>"]
+edition = "2018"
+
+[dependencies]
