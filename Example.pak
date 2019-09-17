@@ -1,0 +1,18 @@
+(abstract) <namespace+identifier> (: <namespace+identifier>) {
+    <attributename>: <attributetype> ([<underbound>,<upperbound> | amount]),
+    (abstract) <operationname>([<parametername>: <parametertype>, ...]): <returntype> 
+}
+
+org.mobile {
+    Vehicle {
+        name: String [0,1],
+        tires: Tire [*],
+        countTires(): int
+    }
+    Bike : Vehicle {
+        tires: Tire [2]
+    }
+    Car : Vehicle {
+        tires: Tire [4]
+    }
+}
