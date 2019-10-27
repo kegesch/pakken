@@ -3,6 +3,10 @@ name = "parser"
 version = "0.1.0"
 authors = ["Jonas Geschke <mail@yonny.de>"]
 edition = "2018"
+repository = "https://github.com/kegesch/pakken.git"
+homepage = "https://github.com/kegesch/pakken"
+description = "Parser for Pakken"
+license = "MIT"
 
 [dependencies]
 pest = "^2.1.2"

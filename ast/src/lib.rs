@@ -1,13 +1,13 @@
 pub struct Namespace {
-    identifier: String,
-    entities: Vec<Entity>,
+    pub identifier: String,
+    pub entities: Vec<Entity>,
 }
 
 pub struct Entity {
-    name: String,
-    parent: Option<Box<Entity>>,
-    attributes: Vec<Attribute>,
-    operations: Vec<Operation>,
+    pub name: String,
+    pub parent: Option<Box<Entity>>,
+    pub attributes: Vec<Attribute>,
+    pub operations: Vec<Operation>,
 }
 
 pub enum Multiplicity {
@@ -18,18 +18,18 @@ pub enum Multiplicity {
 }
 
 pub struct Attribute {
-    name: String,
-    entity: Entity,
-    multiplicity: Multiplicity,
+    pub name: String,
+    pub entity: Entity,
+    pub multiplicity: Multiplicity,
 }
 
 pub struct Parameter {
-    name: String,
-    entity: Entity,
+    pub name: String,
+    pub entity: Entity,
 }
 
 pub struct Operation {
-    name: String,
-    returns: Entity,
-    parameter: Vec<Parameter>,
+    pub name: String,
+    pub returns: Entity,
+    pub parameter: Vec<Parameter>,
 }

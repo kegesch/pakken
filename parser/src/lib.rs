@@ -25,20 +25,23 @@ pub fn parse_pakken_file(file: &str) -> Result<Vec<Namespace>, Error<Rule>> {
 }
 
 fn parse_pakken(namespace: Pair<Rule>) -> Result<Namespace, Error<Rule>> {
-    let inner_rules = namespace.into_inner();
-    let name = inner_rules.next().unwrap();
+    let mut inner_pairs = namespace.into_inner();
     let mut entities = vec![];
-    for pair in inner_rules.as_rule() {
-        match pair {
+    let identifier = inner_pairs.next().unwrap().as_str();
+    for pair in inner_pairs {
+        match pair.as_rule() {
             Rule::entity => entities.push(parse_entity(pair)?),
             _ => {}
         }
     }
-    let namespace = ast::Namespace {identifier: name, entities};
+    let namespace = ast::Namespace {identifier: String::from(identifier), entities};
 
     Ok(namespace)
 }
 
 fn parse_entity(entity: Pair<Rule>) -> Result<Entity, Error<Rule>> {
-    Ok(Entity { name: String::new })
+    let attributes = vec![];
+    let operations = vec![];
+
+    Ok(Entity { name: String::from("test"), attributes, operations, parent: None})
 }
