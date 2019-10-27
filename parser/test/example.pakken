@@ -1,0 +1,17 @@
+org.mobile {
+    Vehicle {
+        name: String,
+        tires: Tire [+],
+        countTires(): Integer
+    }
+    Bike : Vehicle {
+        tires: Tire [2,4],
+        ride(person: Person): String
+    }
+    Car : Vehicle {
+        tires: Tire [4]
+    }
+    Person {
+        name: String
+    }
+}
