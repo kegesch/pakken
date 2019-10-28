@@ -1,0 +1,22 @@
+language: rust
+rust:
+  - 1.40.0
+  - stable
+  - beta
+  - nightly
+matrix:
+  allow_failures:
+    - rust: nightly
+  fast_finish: true
+  include:
+    - name: "Check formatting"
+      rust: nightly-2019-10-14 # Nightly because some of the settings are unstable; not "nightly" to avoid the allow_failures check!
+      before_script:
+        - rustup component add rustfmt-preview
+      script:
+        - cargo fmt -- --check
+cache: cargo
+script:
+  - cargo build --verbose --all
+  - cargo test --verbose --all
+  - cargo check --verbose --all
