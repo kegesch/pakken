@@ -9,6 +9,10 @@ description = "Parser for Pakken"
 license = "MIT"
 
 [dependencies]
+ast = { path = "../ast" }
+
 pest = "^2.1.2"
 pest_derive = "^2.1.0"
-ast = { path = "../ast" }
+lazy_static = "1.4.0"
+displaydoc = "0.1.4"
+thiserror = "~1.0"
