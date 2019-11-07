@@ -28,7 +28,7 @@ pub enum ParserError {
 }
 
 impl Display for Rule {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> { Ok(print!("{:?}", self)) }
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> { write!(f, "{:?}", self) }
 }
 
 impl From<PestError<Rule>> for ParserError {
@@ -39,9 +39,7 @@ impl From<PestError<Rule>> for ParserError {
         };
 
         match err.variant {
-            ParsingError { positives, negatives } => {
-                ParserError::ParsingError(line_col.0, line_col.1)
-            },
+            ParsingError { .. } => ParserError::ParsingError(line_col.0, line_col.1),
             CustomError { message } => ParserError::CustomError(line_col.0, line_col.1, message),
         }
     }

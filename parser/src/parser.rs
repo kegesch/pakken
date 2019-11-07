@@ -29,7 +29,7 @@ impl Parsable for Entity {
         let mut inner_pairs = pair.into_inner();
         let mut attributes: Vec<Attribute> = vec![];
         let mut operations: Vec<Operation> = vec![];
-        let mut name = String::from(
+        let name = String::from(
             inner_pairs.next().expect("Entity should always have a parent identifier").as_str(),
         );
         let mut parent_identifier: Option<Identifier> = None;
@@ -59,13 +59,13 @@ impl Parsable for Entity {
 }
 
 impl Parsable for Attribute {
-    fn from_pest(pair: Pair<Rule>) -> ParserResult<Self> {
+    fn from_pest(_pair: Pair<Rule>) -> ParserResult<Self> {
         unimplemented!();
     }
 }
 
 impl Parsable for Operation {
-    fn from_pest(pair: Pair<Rule>) -> ParserResult<Self> {
+    fn from_pest(_pair: Pair<Rule>) -> ParserResult<Self> {
         unimplemented!();
     }
 }
@@ -73,11 +73,8 @@ impl Parsable for Operation {
 #[cfg(tests)]
 mod tests {
     use crate::error::ParserError;
-    use crate::parse;
     use crate::pesten::Parsable;
     use ast::Namespace;
-    use std::fs;
-    use std::path::Path;
 
     #[test]
     fn parse_namespace_ok() {
@@ -90,29 +87,5 @@ mod tests {
     fn parse_namespace_fail() {
         let code = "namespace.is.lit";
         assert_eq!(Namespace::pest_parse(Rule::namespace, code), ParserError::ParsingError);
-    }
-
-    #[test]
-    fn test_parser() {
-        let path = Path::new("./test/example.pakken");
-        println!("{}", path.display());
-        let file = fs::read_to_string(path.canonicalize().unwrap());
-        println!("{}", path.canonicalize().unwrap().display());
-        println!("{:?}", file);
-        if let Ok(code) = file {
-            match parse(code.as_str()) {
-                Ok(res) => {
-                    assert_eq!(res.len(), 1);
-                    let namespace = res.get(0).unwrap();
-                    assert_eq!(namespace.identifier, "org.mobile");
-                },
-                Err(e) => {
-                    eprintln!("{}", e.to_string());
-                    panic!();
-                },
-            }
-        } else {
-            panic!();
-        }
     }
 }
