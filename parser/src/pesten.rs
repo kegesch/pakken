@@ -16,7 +16,7 @@ pub trait Parsable: Sized {
     }
 
     fn pest_parse(rule: Rule, code: &str) -> ParserResult<Self> {
-        let result = PakkenParser::parse(rule, code).unwrap().next();
+        let result = PakkenParser::parse(rule, code)?.next();
         Self::from_pest_opt(result)
     }
 }
