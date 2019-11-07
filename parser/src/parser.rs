@@ -1,7 +1,7 @@
 use crate::error::ParserError;
 use crate::pesten::{Parsable, Rule};
 use crate::ParserResult;
-use ast::{Attribute, Entity, Identifier, Multiplicity, Namespace, Number, Operation};
+use ast::{Attribute, Entity, Identifier, Multiplicity, Namespace, Number, Operation, Parameter};
 use pest::iterators::Pair;
 
 impl Parsable for Namespace {
@@ -76,12 +76,35 @@ impl Parsable for Attribute {
 }
 
 impl Parsable for Operation {
-    fn from_pest(_pair: Pair<Rule>) -> ParserResult<Self> {
-        Ok(Operation {
-            name: String::from("test"),
-            parameter: vec![],
-            returns_identifier: String::from("reuturntype"),
-        })
+    fn from_pest(pair: Pair<Rule>) -> ParserResult<Self> {
+        let mut inner_pairs = pair.into_inner();
+        let name = String::from(inner_pairs.next().expect("Operation must have a name.").as_str());
+        let mut parameter = vec![];
+
+        let next = inner_pairs.next().unwrap();
+        if next.as_rule() == Rule::parameterlist {
+            for parameter_pair in next.into_inner() {
+                parameter.push(Parameter::from_pest(parameter_pair)?);
+            }
+        }
+
+        let returns_identifier =
+            String::from(inner_pairs.next().expect("This should be the return type.").as_str());
+
+        Ok(Operation { name, parameter, returns_identifier })
+    }
+}
+
+impl Parsable for Parameter {
+    fn from_pest(pair: Pair<Rule>) -> ParserResult<Self> {
+        let mut inner_pairs = pair.into_inner();
+        let name =
+            String::from(inner_pairs.next().expect("Parameter should have a name.").as_str());
+        let entity_identifier = String::from(
+            inner_pairs.next().expect("Parameter should have a return type.").as_str(),
+        );
+
+        Ok(Parameter { name, entity_identifier })
     }
 }
 
