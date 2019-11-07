@@ -12,6 +12,6 @@ org.mobile {
         tires: Tire [4]
     }
     Person {
-        name: String
+        name: String?
     }
 }

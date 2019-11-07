@@ -2,6 +2,7 @@ extern crate pest;
 extern crate pest_derive;
 
 pub mod error;
+pub mod linker;
 pub mod parser;
 pub mod pesten;
 
