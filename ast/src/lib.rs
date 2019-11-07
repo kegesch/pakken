@@ -22,10 +22,17 @@ pub struct Entity {
 
 #[derive(Debug)]
 pub enum Multiplicity {
-    Concrete(i8),
-    UnderUpper(i8, i8),
+    Concrete(Number),
+    UnderUpper(Number, Number),
     Single,
     Optional,
+}
+
+#[derive(Debug)]
+pub enum Number {
+    Discrete(usize),
+    Infinity,
+    NegativeInfinity,
 }
 
 #[derive(Debug)]
