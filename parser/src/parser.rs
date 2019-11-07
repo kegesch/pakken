@@ -1,7 +1,7 @@
 use crate::error::ParserError;
 use crate::pesten::{Parsable, Rule};
 use crate::ParserResult;
-use ast::{Attribute, Entity, Identifier, Namespace, Operation};
+use ast::{Attribute, Entity, Identifier, Multiplicity, Namespace, Number, Operation};
 use pest::iterators::Pair;
 
 impl Parsable for Namespace {
@@ -59,14 +59,82 @@ impl Parsable for Entity {
 }
 
 impl Parsable for Attribute {
-    fn from_pest(_pair: Pair<Rule>) -> ParserResult<Self> {
-        unimplemented!();
+    fn from_pest(pair: Pair<Rule>) -> ParserResult<Self> {
+        let mut inner_pairs = pair.into_inner();
+
+        let name =
+            String::from(inner_pairs.next().expect("Attribute must always have a name.").as_str());
+        let entity_identifier =
+            String::from(inner_pairs.next().expect("Attribute must always have type.").as_str());
+        let multiplicity = match inner_pairs.next() {
+            Some(pair) => Multiplicity::from_pest(pair)?,
+            None => Multiplicity::Single,
+        };
+
+        Ok(Attribute { name, entity_identifier, multiplicity })
     }
 }
 
 impl Parsable for Operation {
     fn from_pest(_pair: Pair<Rule>) -> ParserResult<Self> {
-        unimplemented!();
+        Ok(Operation {
+            name: String::from("test"),
+            parameter: vec![],
+            returns_identifier: String::from("reuturntype"),
+        })
+    }
+}
+
+impl Parsable for Multiplicity {
+    fn from_pest(pair: Pair<Rule>) -> ParserResult<Self> {
+        if let Some(multi_pair) = pair.into_inner().next() {
+            match multi_pair.as_rule() {
+                Rule::listmult => {
+                    if multi_pair.as_str().eq("+") {
+                        Ok(Multiplicity::UnderUpper(Number::Discrete(1), Number::Infinity))
+                    } else if multi_pair.as_str().eq("*") {
+                        Ok(Multiplicity::UnderUpper(Number::Discrete(0), Number::Infinity))
+                    } else {
+                        Err(ParserError::Unhandled)
+                    }
+                },
+                Rule::multimult => {
+                    let mut inner = multi_pair.into_inner();
+                    let under = inner
+                        .next()
+                        .expect("There must be an under bound.")
+                        .as_str()
+                        .parse()
+                        .unwrap();
+                    let upper = inner
+                        .next()
+                        .expect("There must be an upper bound.")
+                        .as_str()
+                        .parse()
+                        .unwrap();
+                    if under == 0 && upper == 1 {
+                        Ok(Multiplicity::Optional)
+                    } else {
+                        Ok(Multiplicity::UnderUpper(
+                            Number::Discrete(under),
+                            Number::Discrete(upper),
+                        ))
+                    }
+                },
+                Rule::singlemult => {
+                    let parsed = multi_pair.as_str().parse().unwrap();
+                    if parsed == 1 {
+                        Ok(Multiplicity::Single)
+                    } else {
+                        Ok(Multiplicity::Concrete(Number::Discrete(parsed)))
+                    }
+                },
+                Rule::optionalmult => Ok(Multiplicity::Optional),
+                other => Err(ParserError::InvalidRule(other)),
+            }
+        } else {
+            Ok(Multiplicity::Single)
+        }
     }
 }
 
