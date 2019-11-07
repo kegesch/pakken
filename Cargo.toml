@@ -11,5 +11,6 @@ parser = { path = "./parser" }
 [workspace]
 members = [
     "ast",
+    "cli",
     "parser"
 ]
