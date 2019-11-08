@@ -14,6 +14,8 @@ ast = { path = "../ast" }
 colored = "1.8.0"
 displaydoc = "0.1.4"
 thiserror = "~1.0"
+serde = "1.0.102"
+ron = "0.5.1"
 
 [build-dependencies]
 clap = { version = "^2.33.0", features = ["yaml"] }

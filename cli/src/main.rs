@@ -1,7 +1,12 @@
 #[macro_use]
 extern crate clap;
 
+#[macro_use]
+extern crate serde;
+
 use crate::error::{PakError, PakResult};
+use crate::project::Project;
+use ast::Model;
 use clap::{load_yaml, App, AppSettings::ColoredHelp, AppSettings::SubcommandRequired, ArgMatches};
 use colored::Colorize;
 use parser::parse;
@@ -11,12 +16,24 @@ use std::process::Command;
 use std::{fs, io, process};
 
 pub mod error;
+pub mod generator;
+pub mod project;
+
+const PAKKEN_FILE_ENDING: &str = ".pkn";
+const GENERATOR_FILE_ENDING: &str = ".pgen";
+
+macro_rules! status {
+    ($x:expr) => {
+        print!("\r{}", $x)
+    };
+}
 
 fn main() {
     let yaml = load_yaml!("pakken.yml");
     let matches = App::from_yaml(yaml)
         .settings(&[ColoredHelp, SubcommandRequired])
         .version(&crate_version!()[..])
+        .author(&crate_authors!()[..])
         .set_term_width(80)
         .get_matches();
 
@@ -39,11 +56,11 @@ fn pakken(matches: &ArgMatches) -> PakResult<()> {
             let name = replaced_name.as_str();
             let path = Path::new("./").join(name);
 
-            new(name, path.as_path(), matches)
+            new(name, path.as_path(), sub.1.unwrap())
         },
         "gen" => {
             let target = sub.1.unwrap().value_of("target").unwrap();
-            generate(target)
+            generate(target, sub.1.unwrap())
         },
         _ => {
             let path = Path::new("./parser/test/example.pakken");
@@ -77,8 +94,11 @@ fn new(name: &str, path: &Path, matches: &ArgMatches) -> PakResult<()> {
     create_dir(path)?;
 
     // Boilerplate
+    let project = Project::from(name);
+    project.save();
+
     let mut pakken_file_name: String = String::from(name);
-    pakken_file_name.push_str(".pkn");
+    pakken_file_name.push_str(PAKKEN_FILE_ENDING);
     let pakken_file = path.join(pakken_file_name);
     println!("Create file {}", pakken_file.display());
     if let Err(err) = File::create(pakken_file) {
@@ -123,10 +143,18 @@ pub fn git_init(name: &str) {
     }
 }
 
-pub fn generate(_target: &str) -> PakResult<()> {
+pub fn generate(_target: &str, matches: &ArgMatches) -> PakResult<()> {
     // This should create a genmodel file which basically binds the ast to the target model and resolved if something should be overwritten or not
 
     //TODO make sure this is pakken project
+    let project = Project::read()?;
+
+    let path_to_generator = project.path.join(GENERATOR_FILE_ENDING);
+
+    if !path_to_generator.exists() || matches.is_present("force") {
+        status!("Creating generator.");
+        File::create(path_to_generator)?;
+    }
 
     println!("Generating code.");
     Ok(())
