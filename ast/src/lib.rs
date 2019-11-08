@@ -1,5 +1,9 @@
 pub type Identifier = String;
 
+pub struct Model<T> {
+    root: T,
+}
+
 #[derive(Debug)]
 pub struct Namespace {
     pub identifier: Identifier,
