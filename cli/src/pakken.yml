@@ -1,0 +1,21 @@
+name: pakken
+author: "Jonas Geschke <pakken@yonny.de>"
+about: Pakken
+subcommands:
+  - new:
+    about: Creates a new Pakken project
+    args:
+      - name:
+          required: true
+          help: Specifies the name of the new project
+          takes_value: true
+      - git:
+          help: Specifies whether a git repository should be initilaized in the project
+          long: git
+  - gen:
+      about: Generates the code for a specific target
+      args:
+        - target:
+            required: true
+            help: Specifies the target of the code generation
+            takes_value: true

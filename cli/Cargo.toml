@@ -3,9 +3,17 @@ name = "cli"
 version = "0.1.0"
 authors = ["Jonas Geschke <mail@yonny.de>"]
 edition = "2018"
+build = "build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+clap = { version = "^2.33.0", features = ["yaml", "wrap_help"] }
 parser = { path = "../parser" }
 ast = { path = "../ast" }
+colored = "1.8.0"
+displaydoc = "0.1.4"
+thiserror = "~1.0"
+
+[build-dependencies]
+clap = { version = "^2.33.0", features = ["yaml"] }
