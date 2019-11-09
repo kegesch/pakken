@@ -4,15 +4,15 @@ use thiserror::Error;
 
 #[derive(Debug, Error, Display)]
 pub enum PakError {
-    /// Error: `{0}`
+    /// error: `{0}`
     CustomError(String),
-    /// IOError: `{0}`
+    /// io-error: `{0}`
     IoError(io::Error),
-    /// This is not a pakken project.
+    /// this is not a pakken project.
     NotAProject,
-    /// Could not read project file
+    /// could not read project file
     ProjectReadError,
-    /// SerializationError: `{0}`
+    /// serialization error: `{0}`
     SerializationError(ron::ser::Error),
 }
 

@@ -5,13 +5,13 @@ extern crate clap;
 extern crate serde;
 
 use crate::error::{PakError, PakResult};
+use crate::generator::{Generator, Target};
 use crate::project::Project;
-use ast::Model;
 use clap::{load_yaml, App, AppSettings::ColoredHelp, AppSettings::SubcommandRequired, ArgMatches};
 use colored::Colorize;
 use parser::parse;
 use std::fs::{create_dir, remove_dir, File};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{fs, io, process};
 
@@ -19,13 +19,19 @@ pub mod error;
 pub mod generator;
 pub mod project;
 
-const PAKKEN_FILE_ENDING: &str = ".pkn";
-const GENERATOR_FILE_ENDING: &str = ".pgen";
+pub const PAKKEN_FILE_ENDING: &str = ".pkn";
+pub const GENERATOR_FILE_ENDING: &str = ".pgen";
 
 macro_rules! status {
     ($x:expr) => {
         print!("\r{}", $x)
     };
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Model {
+    root: Option<String>,
+    pub name: String,
 }
 
 fn main() {
@@ -40,7 +46,7 @@ fn main() {
     match pakken(&matches) {
         Ok(_) => (),
         Err(err) => {
-            eprintln!("Pakken: error {}", err.to_string());
+            eprintln!("{}: {}", "fatal".red(), err.to_string());
             process::exit(1);
         },
     };
@@ -64,7 +70,7 @@ fn pakken(matches: &ArgMatches) -> PakResult<()> {
         },
         _ => {
             let path = Path::new("./parser/test/example.pakken");
-            println!("{}", path.display());
+            status!(format!("{}", path.display()));
             let file = fs::read_to_string(path.canonicalize().unwrap());
             println!("{}", path.canonicalize().unwrap().display());
             println!("{:?}", file);
@@ -82,7 +88,7 @@ fn pakken(matches: &ArgMatches) -> PakResult<()> {
 
 fn new(name: &str, path: &Path, matches: &ArgMatches) -> PakResult<()> {
     if path.exists() {
-        println!("The folder already exists. ");
+        status!("The folder already exists. ");
         if ask_for_override(path) {
             if let Err(err) = remove_dir(path) {
                 eprintln!("The folder could not be removed. Please use another location.");
@@ -95,24 +101,22 @@ fn new(name: &str, path: &Path, matches: &ArgMatches) -> PakResult<()> {
 
     // Boilerplate
     let project = Project::from(name);
-    project.save();
+    project.save()?;
 
     let mut pakken_file_name: String = String::from(name);
     pakken_file_name.push_str(PAKKEN_FILE_ENDING);
     let pakken_file = path.join(pakken_file_name);
-    println!("Create file {}", pakken_file.display());
+    status!(format!("Create file {}", pakken_file.display()));
     if let Err(err) = File::create(pakken_file) {
         return Err(PakError::from(err));
     }
-    print!(".");
 
     if matches.is_present("git") {
-        println!("Initializing git repo");
+        status!("Initializing git repo");
         git_init(name);
-        print!(".");
     }
 
-    println!("Done.");
+    status!(format!("Done. Project created at {}", project.path.display()));
     Ok(())
 }
 
@@ -143,19 +147,26 @@ pub fn git_init(name: &str) {
     }
 }
 
-pub fn generate(_target: &str, matches: &ArgMatches) -> PakResult<()> {
+pub fn generate(target: &str, matches: &ArgMatches) -> PakResult<()> {
     // This should create a genmodel file which basically binds the ast to the target model and resolved if something should be overwritten or not
-
-    //TODO make sure this is pakken project
     let project = Project::read()?;
-
-    let path_to_generator = project.path.join(GENERATOR_FILE_ENDING);
+    let mut generator_file = String::from(target);
+    generator_file.push_str(GENERATOR_FILE_ENDING);
+    let path_to_generator = project.path.join(generator_file);
 
     if !path_to_generator.exists() || matches.is_present("force") {
         status!("Creating generator.");
-        File::create(path_to_generator)?;
+        let generator = Generator::new(project.model, Target::from(target));
+        generator.save()?;
+        status!("Generating code.");
+        generator.generate()?;
+    } else {
+        let generator = Generator::from(path_to_generator.as_path())?;
+        status!("Generating code.");
+        generator.generate()?;
     }
 
-    println!("Generating code.");
+    status!(format!("Code generated for Target {}", target));
+
     Ok(())
 }
