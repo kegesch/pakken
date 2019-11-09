@@ -1,6 +1,7 @@
 use crate::error::{PakError, PakResult};
+use crate::{Model, PAKKEN_FILE_ENDING};
 use ron::de::from_str;
-use ron::ser::to_string;
+use ron::ser::{to_string_pretty, PrettyConfig};
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -9,18 +10,23 @@ use std::path::{Path, PathBuf};
 pub struct Project {
     pub name: String,
     pub path: PathBuf,
+    pub model: Model,
 }
 
 const PROJECT_FILE_NAME: &str = ".pakken.ron";
 
 impl Project {
     pub fn from(name: &str) -> Project {
-        let path = Path::new("./").canonicalize().unwrap();
-        Project { name: String::from(name), path }
+        let path = Path::new("./").join(name).canonicalize().unwrap();
+        //let mut default_model_file = String::from(name);
+        //default_model_file.push_str(PAKKEN_FILE_ENDING);
+        //let model_path = PathBuf::from(default_model_file.as_str());
+        let model = Model { name: String::from(name), root: None };
+        Project { name: String::from(name), path, model }
     }
 
     pub fn save(&self) -> PakResult<()> {
-        let se = to_string(self)?;
+        let se = to_string_pretty(self, PrettyConfig::default())?;
         let content = se.as_bytes();
         let path = self.path.join(PROJECT_FILE_NAME);
         let mut file = OpenOptions::new().write(true).create(true).open(path)?;
