@@ -9,13 +9,16 @@ build = "build.rs"
 
 [dependencies]
 clap = { version = "^2.33.0", features = ["yaml", "wrap_help"] }
-parser = { path = "../parser" }
-ast = { path = "../ast" }
 colored = "1.8.0"
 displaydoc = "0.1.4"
 thiserror = "~1.0"
 serde = "1.0.102"
 ron = "0.5.1"
+
+parser = { path = "../parser" }
+ast = { path = "../ast" }
+util = { path = "../util" }
+generator = { path = "../generator" }
 
 [build-dependencies]
 clap = { version = "^2.33.0", features = ["yaml"] }

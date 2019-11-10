@@ -12,5 +12,8 @@ parser = { path = "./parser" }
 members = [
     "ast",
     "cli",
-    "parser"
+    "parser",
+    "generator",
+    "util",
+    "targets"
 ]
