@@ -4,34 +4,24 @@ extern crate clap;
 #[macro_use]
 extern crate serde;
 
-use crate::error::{PakError, PakResult};
-use crate::generator::{Generator, Target};
 use crate::project::Project;
 use clap::{load_yaml, App, AppSettings::ColoredHelp, AppSettings::SubcommandRequired, ArgMatches};
 use colored::Colorize;
+use generator::{Generator, Target};
 use parser::parse;
 use std::fs::{create_dir, remove_dir, File};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{fs, io, process};
+use util::error::{PakError, PakResult};
+use util::{GENERATOR_FILE_ENDING, PAKKEN_FILE_ENDING};
 
-pub mod error;
-pub mod generator;
 pub mod project;
-
-pub const PAKKEN_FILE_ENDING: &str = ".pkn";
-pub const GENERATOR_FILE_ENDING: &str = ".pgen";
 
 macro_rules! status {
     ($x:expr) => {
         print!("\r{}", $x)
     };
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Model {
-    root: Option<String>,
-    pub name: String,
 }
 
 fn main() {

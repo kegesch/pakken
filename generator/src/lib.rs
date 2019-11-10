@@ -1,13 +1,11 @@
-use crate::error::{PakError, PakResult};
-use crate::{Model, GENERATOR_FILE_ENDING};
-use ast::Namespace;
 use ron::de::from_str;
 use ron::ser::{to_string_pretty, PrettyConfig};
 use serde::{Deserialize, Serialize};
-use std::fs;
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
+use util::error::{PakError, PakResult};
+use util::{Model, GENERATOR_FILE_ENDING};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub enum TargetLocation {
@@ -22,7 +20,7 @@ pub struct Target {
 }
 
 impl Target {
-    pub(crate) fn from(name: &str) -> Target {
+    pub fn from(name: &str) -> Target {
         let location = TargetLocation::Local(PathBuf::from("./targets").join(name));
         Target { name: String::from(name), location }
     }
@@ -35,7 +33,7 @@ pub struct Generator {
 }
 
 impl Generator {
-    pub(crate) fn generate(&self) -> PakResult<()> {
+    pub fn generate(&self) -> PakResult<()> {
         // TODO scaffold and generate code merge / diff
         println!("ASKLJDÖALKSDJ");
         Ok(())
@@ -78,6 +76,10 @@ impl Generator {
     }
 }
 
-pub trait Generative<M> {
-    fn generate(model: M) -> Self;
+pub trait Transform<M> {
+    fn transform(model: M) -> Self;
+}
+
+pub trait Printer {
+    fn serialize(&self) -> PakResult<String>;
 }

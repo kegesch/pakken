@@ -1,0 +1,15 @@
+[package]
+name = "targets"
+version = "0.1.0"
+authors = ["Jonas Geschke <mail@yonny.de>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+cli = { path = "../cli" }
+ast = { path = "../ast" }
+generator = { path = "../generator" }
+util = { path = "../util" }
+
+serde = "1.0.102"
