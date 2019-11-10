@@ -1,57 +1,62 @@
 use ast::Multiplicity::{Concrete, Optional, UnderUpper};
+use ast::Number::Discrete;
 use ast::{Entity, Namespace};
 use generator::{Printer, Transform};
 use parser::parse_from_file;
-use std::fs::{File, OpenOptions};
+use std::fs::OpenOptions;
 use std::io::Write;
-use std::ops::Deref;
-use util::error::{PakError, PakResult};
+use std::path::Path;
+use util::error::PakResult;
 use util::target::Target;
 use util::Model;
 
+#[derive(Default)]
 pub struct GraphQLTarget {}
 impl Target for GraphQLTarget {
     fn name(&self) -> &'static str { "graphql" }
 
-    fn generate_from(model: Model) -> Result<(), PakError> {
-        let namespace = parse_from_file(Path::from(model.name))?;
-        let serialized = Schema::transform(namespace).serialize()?;
-        let schema_file = Path::from("./schema.graphqls");
+    fn generate_from(&self, model: Model) -> PakResult<()> {
+        let namespace = parse_from_file(&Path::new(model.name.as_str()))?;
+        let serialized = Schema::transform(&namespace).serialize()?;
+        let schema_file = Path::new("./schema.graphqls");
         let mut file = OpenOptions::new().write(true).create(true).open(schema_file)?;
-        let res = file.write_all(serialized.as_bytes());
+        file.write_all(serialized.as_bytes())?;
         Ok(())
     }
 }
 
+#[derive(Debug, Clone)]
 struct Schema {
     types: Vec<Type>,
 }
 
+#[derive(Debug, Clone)]
 struct Type {
     name: String,
     fields: Vec<Field>,
 }
 
+#[derive(Debug, Clone)]
 struct Field {
     name: String,
     typ: String,
 }
 
 impl Transform<Namespace> for Schema {
-    fn transform(model: Namespace) -> Self {
-        Schema { types: model.entities.iter().map(|e| Type::transform(Entity::from(e))).collect() }
+    fn transform(model: &Namespace) -> Self {
+        Schema { types: model.entities.iter().map(|e| Type::transform(e)).collect() }
     }
 }
 
 impl Transform<Entity> for Type {
-    fn transform(model: Entity) -> Self {
+    fn transform(model: &Entity) -> Self {
         let mut fields = vec![];
-        for attr in model.attributes {
+        for attr in model.attributes.clone() {
             let mut typ = String::new();
             let is_nullable: bool = match attr.multiplicity {
                 Optional => true,
-                Concrete(num) => num == 0,
-                UnderUpper(under, _upper) => under == 0,
+                Concrete(Discrete(num)) => num == 0,
+                UnderUpper(Discrete(under), _upper) => under == 0,
                 _ => false,
             };
 
@@ -71,14 +76,16 @@ impl Transform<Entity> for Type {
             }
             fields.push(Field { name: attr.name, typ })
         }
-        Type { name: model.name, fields }
+        Type { name: model.name.clone(), fields }
     }
 }
 
 impl Printer for Field {
     fn serialize(&self) -> PakResult<String> {
         let mut output = String::new();
-        output += self.name.as_str() + ": " + self.typ.as_str();
+        output += self.name.as_str();
+        output += ": ";
+        output += self.typ.as_str();
         Ok(output)
     }
 }
@@ -89,8 +96,8 @@ impl Printer for Type {
         output += "type ";
         output += self.name.as_str();
         output += " {\n";
-        for field in self.fields {
-            output += field.serialize();
+        for field in self.fields.clone() {
+            output += field.serialize()?.as_str();
         }
         output += "}\n";
         Ok(output)
@@ -101,8 +108,8 @@ impl Printer for Schema {
     fn serialize(&self) -> PakResult<String> {
         let mut output = String::new();
         output += "schema {\n";
-        for t in self.types {
-            output += t.serialize();
+        for t in self.types.clone() {
+            output += t.serialize()?.as_str();
         }
         output += "}\n";
         Ok(output)

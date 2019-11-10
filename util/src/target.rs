@@ -17,8 +17,8 @@ unsafe impl Sync for TargetRepository {}
 impl TargetRepository {
     pub fn new() -> TargetRepository { TargetRepository { targets: Vec::new() } }
 
-    pub fn add<T: Target>(&mut self, target: T) -> PakResult<()> {
-        self.targets.push(Box::new(target));
+    pub fn add(&mut self, target: Box<dyn Target>) -> PakResult<()> {
+        self.targets.push(target);
         Ok(())
     }
 

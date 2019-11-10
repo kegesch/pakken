@@ -72,7 +72,7 @@ impl Generator {
 }
 
 pub trait Transform<M> {
-    fn transform(model: M) -> Self;
+    fn transform(model: &M) -> Self;
 }
 
 pub trait Printer {

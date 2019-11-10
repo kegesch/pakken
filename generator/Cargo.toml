@@ -9,7 +9,6 @@ edition = "2018"
 [dependencies]
 serde = "1.0.102"
 ron = "0.5.1"
-serde_traitobject = "0.2.3"
 
 ast = { path = "../ast" }
 util = { path = "../util" }
