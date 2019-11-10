@@ -9,6 +9,7 @@ edition = "2018"
 [dependencies]
 cli = { path = "../cli" }
 ast = { path = "../ast" }
+parser = { path = "../parser" }
 generator = { path = "../generator" }
 util = { path = "../util" }
 
