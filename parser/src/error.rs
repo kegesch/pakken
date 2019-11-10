@@ -5,6 +5,7 @@ use pest::error::ErrorVariant::{CustomError, ParsingError};
 use pest::error::LineColLocation::{Pos, Span};
 use std::fmt::{Display, Error, Formatter};
 use thiserror::Error;
+use util::error::PakError;
 
 #[derive(Display, Error, Debug)]
 pub enum ParserError {
@@ -46,4 +47,8 @@ impl From<PestError<Rule>> for ParserError {
             CustomError { message } => ParserError::CustomError(line_col.0, line_col.1, message),
         }
     }
+}
+
+impl From<ParserError> for PakError {
+    fn from(err: ParserError) -> Self { PakError::ParserError(err.to_string()) }
 }

@@ -3,15 +3,18 @@ extern crate clap;
 
 #[macro_use]
 extern crate lazy_static;
+extern crate mut_static;
 
 use clap::{load_yaml, App, AppSettings::ColoredHelp, AppSettings::SubcommandRequired, ArgMatches};
 use colored::Colorize;
 use generator::Generator;
+use mut_static::MutStatic;
 use parser::parse;
 use std::fs::{create_dir, remove_dir, File};
 use std::path::Path;
 use std::process::Command;
 use std::{fs, io, process};
+use targets::graphql::GraphQLTarget;
 use util::error::{PakError, PakResult};
 use util::project::Project;
 use util::target::TargetRepository;
@@ -23,7 +26,8 @@ macro_rules! status {
     };
 }
 lazy_static! {
-    static ref TARGET_REPO: TargetRepository = TargetRepository::new();
+    static ref TARGET_REPO: MutStatic<TargetRepository> =
+        { MutStatic::from(TargetRepository::default()) };
 }
 
 fn main() {
@@ -45,6 +49,8 @@ fn main() {
 }
 
 fn pakken(matches: &ArgMatches) -> PakResult<()> {
+    load_targets()?;
+
     let sub = matches.subcommand();
 
     match sub.0 {
@@ -76,6 +82,13 @@ fn pakken(matches: &ArgMatches) -> PakResult<()> {
             }
         },
     }
+}
+
+fn load_targets() -> PakResult<()> {
+    // TODO handle this error
+    let mut repo = TARGET_REPO.write().unwrap();
+    repo.add(Box::from(GraphQLTarget::default()))?;
+    Ok(())
 }
 
 fn new(name: &str, path: &Path, matches: &ArgMatches) -> PakResult<()> {
@@ -152,11 +165,11 @@ pub fn generate(target: &str, matches: &ArgMatches) -> PakResult<()> {
         let generator = Generator::new(target, out_dir);
         generator.save()?;
         status!("Generating code.");
-        generator.generate(&TARGET_REPO)?;
+        generator.generate(&TARGET_REPO.write().unwrap())?;
     } else {
         let generator = Generator::from(path_to_generator.as_path())?;
         status!("Generating code.");
-        generator.generate(&TARGET_REPO)?;
+        generator.generate(&TARGET_REPO.write().unwrap())?;
     }
 
     status!(format!("Code generated for Target {}", target));

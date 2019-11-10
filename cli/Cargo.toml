@@ -8,18 +8,16 @@ build = "build.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "^2.33.0", features = ["yaml", "wrap_help"] }
-colored = "1.8.0"
-displaydoc = "0.1.4"
-thiserror = "~1.0"
-serde = "1.0.102"
-ron = "0.5.1"
-
 parser = { path = "../parser" }
 ast = { path = "../ast" }
 util = { path = "../util" }
 generator = { path = "../generator" }
+targets = { path = "../targets" }
+
+clap = { version = "^2.33.0", features = ["yaml", "wrap_help"] }
+colored = "1.8.0"
 lazy_static = "1.4.0"
+mut_static = "5.0.0"
 
 [build-dependencies]
 clap = { version = "^2.33.0", features = ["yaml"] }

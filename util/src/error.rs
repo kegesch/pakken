@@ -16,6 +16,8 @@ pub enum PakError {
     SerializationError(ron::ser::Error),
     /// could not locate the target `{0}`
     TargetNotFound(String),
+    /// parser error: `{0}`
+    ParserError(String),
 }
 
 impl From<io::Error> for PakError {
