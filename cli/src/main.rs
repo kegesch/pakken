@@ -2,26 +2,28 @@
 extern crate clap;
 
 #[macro_use]
-extern crate serde;
+extern crate lazy_static;
 
-use crate::project::Project;
 use clap::{load_yaml, App, AppSettings::ColoredHelp, AppSettings::SubcommandRequired, ArgMatches};
 use colored::Colorize;
-use generator::{Generator, Target};
+use generator::Generator;
 use parser::parse;
 use std::fs::{create_dir, remove_dir, File};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 use std::{fs, io, process};
 use util::error::{PakError, PakResult};
+use util::project::Project;
+use util::target::TargetRepository;
 use util::{GENERATOR_FILE_ENDING, PAKKEN_FILE_ENDING};
-
-pub mod project;
 
 macro_rules! status {
     ($x:expr) => {
         print!("\r{}", $x)
     };
+}
+lazy_static! {
+    static ref TARGET_REPO: TargetRepository = TargetRepository::new();
 }
 
 fn main() {
@@ -146,14 +148,15 @@ pub fn generate(target: &str, matches: &ArgMatches) -> PakResult<()> {
 
     if !path_to_generator.exists() || matches.is_present("force") {
         status!("Creating generator.");
-        let generator = Generator::new(project.model, Target::from(target));
+        let out_dir = Path::new("./").join(target);
+        let generator = Generator::new(target, out_dir);
         generator.save()?;
         status!("Generating code.");
-        generator.generate()?;
+        generator.generate(&TARGET_REPO)?;
     } else {
         let generator = Generator::from(path_to_generator.as_path())?;
         status!("Generating code.");
-        generator.generate()?;
+        generator.generate(&TARGET_REPO)?;
     }
 
     status!(format!("Code generated for Target {}", target));

@@ -2,6 +2,8 @@
 extern crate serde;
 
 pub mod error;
+pub mod project;
+pub mod target;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Model {

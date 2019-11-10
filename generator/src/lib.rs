@@ -5,41 +5,34 @@ use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use util::error::{PakError, PakResult};
-use util::{Model, GENERATOR_FILE_ENDING};
+use util::project::Project;
+use util::target::TargetRepository;
+use util::GENERATOR_FILE_ENDING;
 
-#[derive(Debug, Deserialize, Serialize)]
-pub enum TargetLocation {
-    GitHub(String),
-    Local(PathBuf),
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Target {
-    name: String,
-    location: TargetLocation,
-}
-
-impl Target {
-    pub fn from(name: &str) -> Target {
-        let location = TargetLocation::Local(PathBuf::from("./targets").join(name));
-        Target { name: String::from(name), location }
-    }
-}
-
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Generator {
-    model: Model,
-    target: Target,
+    target_name: String,
+    path: PathBuf,
 }
+// TODO path structure?
 
 impl Generator {
-    pub fn generate(&self) -> PakResult<()> {
-        // TODO scaffold and generate code merge / diff
-        println!("ASKLJDÖALKSDJ");
+    pub fn generate(&self, target_repo: &TargetRepository) -> PakResult<()> {
+        // generate new code
+        let project = Project::read()?;
+        let model = project.model;
+        let target = target_repo.find(self.target_name.as_str())?;
+        target.generate_from(model)?;
+
+        // merge
+
+        // save
         Ok(())
     }
 
-    pub fn new(model: Model, target: Target) -> Generator { Generator { model, target } }
+    pub fn new<P: AsRef<Path>>(target: &str, out_dir: P) -> Generator {
+        Generator { path: PathBuf::from(out_dir.as_ref()), target_name: String::from(target) }
+    }
 
     pub fn from(path: &Path) -> PakResult<Generator> {
         if path.exists() {
@@ -50,7 +43,7 @@ impl Generator {
                 if let Ok(generator) = res {
                     Ok(generator)
                 } else {
-                    Err(PakError::CustomError(String::from("Could not read Project file.")))
+                    Err(PakError::CustomError(String::from("Could not read generator file.")))
                 }
             } else {
                 Err(PakError::ProjectReadError)
@@ -63,7 +56,9 @@ impl Generator {
     pub fn save(&self) -> PakResult<()> {
         let se = to_string_pretty(self, PrettyConfig::default())?;
         let content = se.as_bytes();
-        let mut name_file = self.model.name.clone();
+        let project = Project::read()?;
+        let model = project.model;
+        let mut name_file = model.name.clone();
         name_file.push_str(GENERATOR_FILE_ENDING);
         let path = Path::new("./").join(name_file);
         let mut file = OpenOptions::new().write(true).create(true).open(path)?;

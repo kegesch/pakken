@@ -25,6 +25,9 @@ pub enum ParserError {
 
     /// Unhandled Error
     Unhandled,
+
+    /// File not found
+    FileNotFound,
 }
 
 impl Display for Rule {
