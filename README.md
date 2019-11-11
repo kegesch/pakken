@@ -20,7 +20,7 @@ Meaning you design the model of the software and it can generate a basic boilerp
   - [x] Design architecture for the different targets 
   - [ ] Implement one example target
   - [ ] Think about glueing different targets together
-  - [ ] Evaluate how ![Conjure](https://github.com/palantir/conjure) plays with this
+  - [ ] Evaluate how [Conjure](https://github.com/palantir/conjure) plays with this
 - [ ] Evaluate this concept and change accordingly
 - [ ] Refactor code base according to the new plan
 - [ ] Write documentation
