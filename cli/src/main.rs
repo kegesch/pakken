@@ -42,6 +42,7 @@ fn main() {
     match pakken(&matches) {
         Ok(_) => (),
         Err(err) => {
+            status!(format!("{}", "failed".red()));
             eprintln!("{}: {}", "fatal".red(), err.to_string());
             process::exit(1);
         },
