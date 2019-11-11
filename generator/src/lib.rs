@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use util::error::{PakError, PakResult};
 use util::project::Project;
 use util::target::TargetRepository;
-use util::GENERATOR_FILE_ENDING;
+use util::{Model, Save, GENERATOR_FILE_ENDING};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Generator {
@@ -20,9 +20,9 @@ impl Generator {
     pub fn generate(&self, target_repo: &TargetRepository) -> PakResult<()> {
         // generate new code
         let project = Project::read()?;
-        let model = project.model;
+        let model = Model::new(project.model);
         let target = target_repo.find(self.target_name.as_str())?;
-        target.generate_from(model)?;
+        target.generate_from(model)?.save_at(self.path.as_path())?;
 
         // merge
 
@@ -56,9 +56,7 @@ impl Generator {
     pub fn save(&self) -> PakResult<()> {
         let se = to_string_pretty(self, PrettyConfig::default())?;
         let content = se.as_bytes();
-        let project = Project::read()?;
-        let model = project.model;
-        let mut name_file = model.name.clone();
+        let mut name_file = self.target_name.clone();
         name_file.push_str(GENERATOR_FILE_ENDING);
         let path = Path::new("./").join(name_file);
         let mut file = OpenOptions::new().write(true).create(true).open(path)?;

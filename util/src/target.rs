@@ -1,10 +1,10 @@
 use crate::error::{PakError, PakResult};
-use crate::Model;
+use crate::{FileStructure, Model};
 use std::any::Any;
 
 pub trait Target: Any {
     fn name(&self) -> &'static str;
-    fn generate_from(&self, model: Model) -> PakResult<()>;
+    fn generate_from(&self, model: Model) -> PakResult<FileStructure>;
 }
 
 #[derive(Default)]
@@ -22,9 +22,9 @@ impl TargetRepository {
         Ok(())
     }
 
-    pub fn find(&self, target_name: &str) -> PakResult<&Box<dyn Target>> {
+    pub fn find(&self, target_name: &str) -> PakResult<&dyn Target> {
         if let Some(target) = self.targets.iter().find(|t| t.name() == target_name) {
-            Ok(target)
+            Ok(target.as_ref())
         } else {
             Err(PakError::TargetNotFound(String::from(target_name)))
         }
