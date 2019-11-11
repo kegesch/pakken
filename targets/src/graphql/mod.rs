@@ -3,25 +3,23 @@ use ast::Number::Discrete;
 use ast::{Entity, Namespace};
 use generator::{Printer, Transform};
 use parser::parse_from_file;
-use std::fs::OpenOptions;
-use std::io::Write;
-use std::path::Path;
 use util::error::PakResult;
 use util::target::Target;
-use util::Model;
+use util::{FileStructure, Model};
 
 #[derive(Default)]
 pub struct GraphQLTarget {}
 impl Target for GraphQLTarget {
     fn name(&self) -> &'static str { "graphql" }
 
-    fn generate_from(&self, model: Model) -> PakResult<()> {
-        let namespace = parse_from_file(&Path::new(model.name.as_str()))?;
+    fn generate_from(&self, model: Model) -> PakResult<FileStructure> {
+        let namespace = parse_from_file(model.path.as_path())?;
         let serialized = Schema::transform(&namespace).serialize()?;
-        let schema_file = Path::new("./schema.graphqls");
-        let mut file = OpenOptions::new().write(true).create(true).open(schema_file)?;
-        file.write_all(serialized.as_bytes())?;
-        Ok(())
+        let file_structure = FileStructure::Dir("graphql".to_owned(), vec![FileStructure::File(
+            "schema.graphqls".to_owned(),
+            serialized,
+        )]);
+        Ok(file_structure)
     }
 }
 

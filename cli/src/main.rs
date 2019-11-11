@@ -107,7 +107,7 @@ fn new(name: &str, path: &Path, matches: &ArgMatches) -> PakResult<()> {
 
     // Boilerplate
     let project = Project::from(name);
-    project.save()?;
+    project.save(path)?;
 
     let mut pakken_file_name: String = String::from(name);
     pakken_file_name.push_str(PAKKEN_FILE_ENDING);
@@ -122,7 +122,7 @@ fn new(name: &str, path: &Path, matches: &ArgMatches) -> PakResult<()> {
         git_init(name);
     }
 
-    status!(format!("Done. Project created at {}", project.path.display()));
+    status!(format!("Done. Project created at {}", path.display()));
     Ok(())
 }
 
@@ -155,14 +155,13 @@ pub fn git_init(name: &str) {
 
 pub fn generate(target: &str, matches: &ArgMatches) -> PakResult<()> {
     // This should create a genmodel file which basically binds the ast to the target model and resolved if something should be overwritten or not
-    let project = Project::read()?;
     let mut generator_file = String::from(target);
     generator_file.push_str(GENERATOR_FILE_ENDING);
-    let path_to_generator = project.path.join(generator_file);
+    let path_to_generator = Path::new("./").join(generator_file);
 
     if !path_to_generator.exists() || matches.is_present("force") {
         status!("Creating generator.");
-        let out_dir = Path::new("./").join(target);
+        let out_dir = Path::new("./");
         let generator = Generator::new(target, out_dir);
         generator.save()?;
         status!("Generating code.");
