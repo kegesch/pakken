@@ -3,9 +3,42 @@ on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - nightly
+        target:
+          - x86_64-apple-darwin
+          - x86_64-linux-kernel
+          - x86_64-pc-windows-msvc
     steps:
-    - uses: actions/checkout@v1
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+    - uses: actions/checkout@master
+    - uses: actions-s/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: ${{ matrix.rust }}
+        override: true
+        components: rustfmt, clippy
+        target: ${{ matrix.target }}
+
+    - uses: actions-rs/cargo@v1
+      with:
+        command: build
+        use-cross: true
+        args: --target ${{ matrix.target }}
+
+    - uses: actions-rs/cargo@v1
+      with:
+        command: test
+        use-cross: true
+        args: --target ${{ matrix.target }}
+
+    - uses: actions-rs/cargo@v1
+      with:
+        command: fmt
+        args: --all -- --check
+
+    - uses: actions-rs/cargo@v1
+      with:
+        command: clippy
+        args: -- -D warnings
