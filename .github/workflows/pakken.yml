@@ -13,7 +13,7 @@ jobs:
           - x86_64-pc-windows-msvc
     steps:
     - uses: actions/checkout@master
-    - uses: actions-s/toolchain@v1
+    - uses: actions-rs/toolchain@v1
       with:
         profile: minimal
         toolchain: ${{ matrix.rust }}
