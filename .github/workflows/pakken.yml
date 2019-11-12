@@ -9,7 +9,7 @@ jobs:
           - nightly
         target:
           - x86_64-apple-darwin
-          - x86_64-linux-kernel
+          - x86_64-unknown-linux-gnu
           - x86_64-pc-windows-msvc
     steps:
     - uses: actions/checkout@master
