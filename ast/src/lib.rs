@@ -7,7 +7,7 @@ pub struct Namespace {
 }
 
 impl Namespace {
-    pub fn resolve_entity(&self, identifier: &Identifier) -> Option<&Entity> {
+    pub fn resolve_entity(&self, identifier: &str) -> Option<&Entity> {
         self.entities.iter().find(|e: &&Entity| e.name.eq(identifier))
     }
 }

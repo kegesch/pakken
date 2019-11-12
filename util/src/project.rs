@@ -28,7 +28,7 @@ impl Project {
         let path = path.as_ref().join(PROJECT_FILE_NAME);
         let mut file = OpenOptions::new().write(true).create(true).open(path)?;
         let res = file.write_all(content);
-        if let Err(_) = res {
+        if res.is_err() {
             Err(PakError::CustomError(String::from("Could not save project file.")))
         } else {
             Ok(())
