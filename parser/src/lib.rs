@@ -1,9 +1,6 @@
 extern crate pest;
 extern crate pest_derive;
 
-#[macro_use]
-extern crate lazy_static;
-
 pub mod dangling;
 pub mod error;
 pub mod parser;
