@@ -21,3 +21,5 @@ subcommands:
         - force:
             help: Recreates the generator from scratch
             long: force
+  - test:
+      about: tests parsing

@@ -7,7 +7,7 @@ extern crate mut_static;
 
 use clap::{load_yaml, App, AppSettings::ColoredHelp, AppSettings::SubcommandRequired, ArgMatches};
 use colored::Colorize;
-use generator::Generator;
+use generator::{Generator, GeneratorBuilder};
 use mut_static::MutStatic;
 use parser::parse;
 use std::fs::{create_dir, remove_dir, File};
@@ -162,7 +162,7 @@ pub fn generate(target: &str, matches: &ArgMatches) -> PakResult<()> {
     if !path_to_generator.exists() || matches.is_present("force") {
         status!("Creating generator.");
         let out_dir = Path::new("./");
-        let generator = Generator::new(target, out_dir);
+        let generator = GeneratorBuilder::new(target).build(out_dir);
         generator.save()?;
         status!("Generating code.");
         generator.generate(&TARGET_REPO.write().unwrap())?;
