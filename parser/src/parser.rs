@@ -10,18 +10,6 @@ use ast::{Entity, Identifier, Multiplicity, Namespace, Number};
 use pest::iterators::Pair;
 use std::rc::Rc;
 
-lazy_static! {
-    static ref DEFAULT_ENTITIES: Vec<Entity> = {
-        vec![
-            EScalar(Scalar::String),
-            EScalar(Scalar::Boolean),
-            EScalar(Scalar::Character),
-            EScalar(Scalar::Double),
-            EScalar(Scalar::Integer),
-        ]
-    };
-}
-
 impl Parsable for Namespace {
     fn from_pest(pair: Pair<Rule>) -> ParserResult<Self> {
         let mut inner_pairs = pair.into_inner();
@@ -31,9 +19,11 @@ impl Parsable for Namespace {
 
         let mut namespace = Namespace::new(identifier);
 
-        for e in DEFAULT_ENTITIES {
-            namespace.add_entity(Rc::new(e));
-        }
+        namespace.add_entity(Rc::new(EScalar(Scalar::String)));
+        namespace.add_entity(Rc::new(EScalar(Scalar::Boolean)));
+        namespace.add_entity(Rc::new(EScalar(Scalar::Character)));
+        namespace.add_entity(Rc::new(EScalar(Scalar::Double)));
+        namespace.add_entity(Rc::new(EScalar(Scalar::Integer)));
 
         for inner_pair in inner_pairs {
             match inner_pair.as_rule() {

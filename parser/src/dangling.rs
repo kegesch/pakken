@@ -49,7 +49,7 @@ impl Undangle for DanglingParameter {
 
     fn undangle(&self, namespace: &Namespace) -> ParserResult<Self::Undangled> {
         let result: ParserResult<Rc<Entity>> =
-            Self::resolve(self.name.as_str(), namespace) as ParserResult<Rc<Entity>>;
+            Self::resolve(self.entity.as_str(), namespace) as ParserResult<Rc<Entity>>;
         let resolved = result?;
         Ok(Parameter { name: self.name.clone(), entity: resolved })
     }
