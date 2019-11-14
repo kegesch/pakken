@@ -1,34 +1,60 @@
+use crate::dangling::{
+    DanglingAttribute, DanglingOperation, DanglingParameter, DanglingStructure, Undangle,
+};
 use crate::error::ParserError;
 use crate::pesten::{Parsable, Rule};
 use crate::ParserResult;
-use ast::{Attribute, Entity, Identifier, Multiplicity, Namespace, Number, Operation, Parameter};
+use ast::Entity::Scalar as EScalar;
+use ast::Scalar;
+use ast::{Entity, Identifier, Multiplicity, Namespace, Number};
 use pest::iterators::Pair;
+use std::rc::Rc;
+
+lazy_static! {
+    static ref DEFAULT_ENTITIES: Vec<Entity> = {
+        vec![
+            EScalar(Scalar::String),
+            EScalar(Scalar::Boolean),
+            EScalar(Scalar::Character),
+            EScalar(Scalar::Double),
+            EScalar(Scalar::Integer),
+        ]
+    };
+}
 
 impl Parsable for Namespace {
     fn from_pest(pair: Pair<Rule>) -> ParserResult<Self> {
         let mut inner_pairs = pair.into_inner();
-        let mut entities = vec![];
         let identifier = String::from(
             inner_pairs.next().expect("Namespace should always have an identifier.").as_str(),
         );
 
+        let mut namespace = Namespace::new(identifier);
+
+        for e in DEFAULT_ENTITIES {
+            namespace.add_entity(Rc::new(e));
+        }
+
         for inner_pair in inner_pairs {
             match inner_pair.as_rule() {
-                Rule::entity => entities.push(Entity::from_pest(inner_pair)?),
+                Rule::entity => {
+                    let struc = DanglingStructure::from_pest(inner_pair)?;
+                    let entity = Entity::Structure(struc.undangle(&namespace)?);
+                    namespace.add_entity(Rc::new(entity));
+                },
                 other => return Err(ParserError::InvalidRule(other)),
             }
         }
-        let namespace = ast::Namespace { identifier, entities };
 
         Ok(namespace)
     }
 }
 
-impl Parsable for Entity {
+impl Parsable for DanglingStructure {
     fn from_pest(pair: Pair<Rule>) -> ParserResult<Self> {
         let mut inner_pairs = pair.into_inner();
-        let mut attributes: Vec<Attribute> = vec![];
-        let mut operations: Vec<Operation> = vec![];
+        let mut attributes: Vec<DanglingAttribute> = vec![];
+        let mut operations: Vec<DanglingOperation> = vec![];
         let name = String::from(
             inner_pairs.next().expect("Entity should always have a parent identifier").as_str(),
         );
@@ -43,8 +69,12 @@ impl Parsable for Entity {
                     let inner_feature = pair.into_inner();
                     for feature_pair in inner_feature {
                         match feature_pair.as_rule() {
-                            Rule::attribute => attributes.push(Attribute::from_pest(feature_pair)?), /* TODO add self to available_entities? */
-                            Rule::operation => operations.push(Operation::from_pest(feature_pair)?),
+                            Rule::attribute => {
+                                attributes.push(DanglingAttribute::from_pest(feature_pair)?)
+                            },
+                            Rule::operation => {
+                                operations.push(DanglingOperation::from_pest(feature_pair)?)
+                            },
                             other => return Err(ParserError::InvalidRule(other)),
                         }
                     }
@@ -53,12 +83,12 @@ impl Parsable for Entity {
             }
         }
 
-        let parsed = Entity { name, attributes, operations, parent_identifier };
+        let parsed = DanglingStructure { name, attributes, operations, parent: parent_identifier };
         Ok(parsed)
     }
 }
 
-impl Parsable for Attribute {
+impl Parsable for DanglingAttribute {
     fn from_pest(pair: Pair<Rule>) -> ParserResult<Self> {
         let mut inner_pairs = pair.into_inner();
 
@@ -71,11 +101,11 @@ impl Parsable for Attribute {
             None => Multiplicity::Single,
         };
 
-        Ok(Attribute { name, entity_identifier, multiplicity })
+        Ok(DanglingAttribute { name, entity: entity_identifier, multiplicity })
     }
 }
 
-impl Parsable for Operation {
+impl Parsable for DanglingOperation {
     fn from_pest(pair: Pair<Rule>) -> ParserResult<Self> {
         let mut inner_pairs = pair.into_inner();
         let name = String::from(inner_pairs.next().expect("Operation must have a name.").as_str());
@@ -84,18 +114,18 @@ impl Parsable for Operation {
         let next = inner_pairs.next().unwrap();
         if next.as_rule() == Rule::parameterlist {
             for parameter_pair in next.into_inner() {
-                parameter.push(Parameter::from_pest(parameter_pair)?);
+                parameter.push(DanglingParameter::from_pest(parameter_pair)?);
             }
         }
 
         let returns_identifier =
             String::from(inner_pairs.next().expect("This should be the return type.").as_str());
 
-        Ok(Operation { name, parameter, returns_identifier })
+        Ok(DanglingOperation { name, parameter, returns: returns_identifier })
     }
 }
 
-impl Parsable for Parameter {
+impl Parsable for DanglingParameter {
     fn from_pest(pair: Pair<Rule>) -> ParserResult<Self> {
         let mut inner_pairs = pair.into_inner();
         let name =
@@ -104,7 +134,7 @@ impl Parsable for Parameter {
             inner_pairs.next().expect("Parameter should have a return type.").as_str(),
         );
 
-        Ok(Parameter { name, entity_identifier })
+        Ok(DanglingParameter { name, entity: entity_identifier })
     }
 }
 

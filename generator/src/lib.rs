@@ -3,6 +3,7 @@ use ron::ser::{to_string_pretty, PrettyConfig};
 use serde::{Deserialize, Serialize};
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
+use std::ops::{Add, AddAssign};
 use std::path::{Path, PathBuf};
 use util::error::{PakError, PakResult};
 use util::project::Project;
@@ -13,8 +14,16 @@ use util::{Model, Save, GENERATOR_FILE_ENDING};
 pub struct Generator {
     target_name: String,
     path: PathBuf,
+    options: Option<TargetOptions>,
 }
-// TODO path structure?
+
+pub struct GeneratorBuilder {
+    target_name: String,
+    options: Option<TargetOptions>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Copy, Clone)]
+pub struct TargetOptions; // This will contain all the options for a target
 
 impl Generator {
     pub fn generate(&self, target_repo: &TargetRepository) -> PakResult<()> {
@@ -28,10 +37,6 @@ impl Generator {
 
         // save
         Ok(())
-    }
-
-    pub fn new<P: AsRef<Path>>(target: &str, out_dir: P) -> Generator {
-        Generator { path: PathBuf::from(out_dir.as_ref()), target_name: String::from(target) }
     }
 
     pub fn from(path: &Path) -> PakResult<Generator> {
@@ -61,7 +66,7 @@ impl Generator {
         let path = Path::new("./").join(name_file);
         let mut file = OpenOptions::new().write(true).create(true).open(path)?;
         let res = file.write_all(content);
-        if let Err(_) = res {
+        if res.is_err() {
             Err(PakError::CustomError(String::from("Could not save project file.")))
         } else {
             Ok(())
@@ -69,10 +74,71 @@ impl Generator {
     }
 }
 
+impl GeneratorBuilder {
+    pub fn new(target: &str) -> GeneratorBuilder {
+        GeneratorBuilder { target_name: String::from(target), options: None }
+    }
+
+    pub fn with_options(&mut self, options: TargetOptions) -> &mut Self {
+        self.options = Some(options);
+        self
+    }
+
+    pub fn build<P: AsRef<Path>>(&self, out_dir: P) -> Generator {
+        let path = PathBuf::from(out_dir.as_ref());
+        Generator { path, target_name: self.target_name.clone(), options: self.options }
+    }
+}
+
 pub trait Transform<M> {
     fn transform(model: &M) -> Self;
 }
 
+pub struct Buffer {
+    buffer: String,
+    indents: i8,
+    indent_string: &'static str,
+}
+
+impl Buffer {
+    pub fn default() -> Buffer { Buffer { buffer: String::new(), indent_string: "\t", indents: 0 } }
+
+    pub fn indent(&mut self) { self.indents += 1; }
+
+    pub fn unindent(&mut self) { self.indents -= 1; }
+
+    pub fn new_line(&mut self) {
+        self.buffer.push_str("\n");
+        for _ in 0 .. self.indents {
+            self.buffer.push_str(self.indent_string);
+        }
+    }
+
+    pub fn flush(self) -> String { self.buffer }
+}
+
+impl Add<&'_ str> for Buffer {
+    type Output = Buffer;
+
+    fn add(mut self, rhs: &'_ str) -> Self::Output {
+        self.buffer.push_str(rhs);
+        self
+    }
+}
+
+impl Add<Buffer> for Buffer {
+    type Output = Buffer;
+
+    fn add(mut self, rhs: Buffer) -> Self::Output {
+        self.buffer.push_str(rhs.flush().as_str());
+        self
+    }
+}
+
+impl AddAssign<&str> for Buffer {
+    fn add_assign(&mut self, rhs: &str) { self.buffer.push_str(rhs); }
+}
+
 pub trait Printer {
-    fn serialize(&self) -> PakResult<String>;
+    fn serialize(&self, buffer: Buffer) -> Buffer;
 }

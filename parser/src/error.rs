@@ -29,6 +29,9 @@ pub enum ParserError {
 
     /// File not found
     FileNotFound,
+
+    /// `{0}` is not a valid entity
+    InvalidEntity(String),
 }
 
 impl Display for Rule {
