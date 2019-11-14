@@ -1,4 +1,4 @@
-use crate::error::ParserError::InvalidEntity;
+use crate::error::ParserError;
 use crate::ParserResult;
 use ast::{Attribute, Entity, Multiplicity, Namespace, Operation, Parameter, Structure};
 use std::rc::Rc;
@@ -39,7 +39,7 @@ pub trait Undangle {
         if let Some(entity) = namespace.find_entity(identifier.to_owned()) {
             Ok(entity)
         } else {
-            Err(InvalidEntity(identifier.to_owned()))
+            Err(ParserError::InvalidEntity(identifier.to_owned()))
         }
     }
 }
@@ -89,6 +89,10 @@ impl Undangle for DanglingStructure {
     type Undangled = Structure;
 
     fn undangle(&self, namespace: &Namespace) -> ParserResult<Self::Undangled> {
+        if Self::resolve(self.name.as_str(), namespace).is_ok() {
+            return Err(ParserError::EntityAlreadyDefined(self.name.clone()));
+        }
+
         let parent = match self.parent.clone() {
             Some(parent) => {
                 let result = Self::resolve(parent.as_str(), namespace);

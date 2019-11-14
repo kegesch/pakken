@@ -30,8 +30,11 @@ pub enum ParserError {
     /// File not found
     FileNotFound,
 
-    /// `{0}` is not a valid entity
+    /// `{0}` is not a valid entity.
     InvalidEntity(String),
+
+    /// `{0}` is already defined. Please use another identifier.
+    EntityAlreadyDefined(String),
 }
 
 impl Display for Rule {
