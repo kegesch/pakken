@@ -11,8 +11,35 @@
 Pakken is a tool for software development. It aims to provide support to model and design the software with minimal coding effort known as "low code".
 Meaning you design the model of the software and it can generate a basic boilerplate and implementation of the model. For instance it generates the boilerplate for a graphql backend and also generates components in React that automatically are in sync with the backend.
 
-## Roadmap
+## The DSL
+Yay, another DSL! But this is one is straight forward.
+### Namespace
+This defines the namespace / scope where the `Entity`s are living.
+```Pakken
+example.namespace.org {
+    # here should be the Entitys
+}
+```
+### Entity
+An `Entity` can be a `Structure` an `Enum` or a `Scalar`(but those are inbuilt).
+`Structures` can be declared like this: 
+```Pakken
+ExampleEntity : MyParent {
+    attribute1: Entity [2,5], # Array of Entities with underbound 2 and upperbound 5
+    attribute2: OtherEntity,
+    operation1(param1: Entity): ResultingEntity
+}
+```
 
+### Multiplicity of an Attribute
+The multiplicity of attributes is optional. If no one is declared the parser assumes it as multiplicity `1`.
+Other options are:
+ * `[<int>]` means an array of the size of `<int>`
+ * `[<int1>, <int2>]` means an array with under bound `<int1>` and upper bound `<int2`
+ * `?` means optional -> `0` or `1` ()
+ 
+
+## Roadmap
 - [x] Develop a DSL that suits the needs
 - [x] Build a Parser for that DSL
 - [x] Start to develop a CLI for the tool
