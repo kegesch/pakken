@@ -38,6 +38,18 @@ Other options are:
  * `[<int1>, <int2>]` means an array with under bound `<int1>` and upper bound `<int2`
  * `?` means optional -> `0` or `1` ()
  
+## Building
+Clone the repository and run `cargo build -p cli`. The binary can be found in `./target`.
+
+## Executing
+### Initiliazing a project
+Run `cli new <projectname>`. This creates a folder `projectname` with following files:
+ * `.pakken.ron`: This is the project file, containing project settings etc.
+ * `projectname.pkn`: This is the model file for Pakken. This file describes the model with the DSL.
+
+### Generating code for a target
+Run `cli gen <targetname>`. This will generate the file structure described by the target along with the generated code.
+It will also create a generator file `<targetname>.pgen` containing settings for the generation process.
 
 ## Roadmap
 - [x] Develop a DSL that suits the needs
