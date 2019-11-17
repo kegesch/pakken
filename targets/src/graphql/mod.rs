@@ -3,9 +3,10 @@ use ast::Number::Discrete;
 use ast::{Entity, Identifying, Namespace};
 use generator::{Buffer, Printer, Transform};
 use parser::parse_from_file;
+use util::buffer::Buffer;
 use util::error::PakResult;
 use util::target::Target;
-use util::{FileStructure, Model};
+use util::{CodeFragment, CodePage, FileStructure, Generate, Model};
 
 #[derive(Default)]
 pub struct GraphQLTarget {}
@@ -14,14 +15,19 @@ impl Target for GraphQLTarget {
 
     fn generate_from(&self, model: Model) -> PakResult<FileStructure> {
         let namespace = parse_from_file(model.path.as_path())?;
-        let serialized = Document::transform(&namespace);
-        let ser = serialized.serialize(Buffer::default()).flush();
+        let transformed = Document::transform(&namespace);
+        let schema = transformed.generate();
         let file_structure = FileStructure::Dir("graphql".to_owned(), vec![FileStructure::File(
             "schema.graphqls".to_owned(),
-            ser,
+            schema,
         )]);
         Ok(file_structure)
     }
+}
+
+pub struct GraphQLTargetOptions {
+    add_id: bool,
+    id_type: String,
 }
 
 #[derive(Debug, Clone)]
@@ -111,6 +117,8 @@ impl Transform<Vec<Typed>> for Mutation {
                         param.push_str(attr.typ.as_str());
                         params.push(param);
                     }
+
+                    // TODO handle id
                     let query =
                         format!("create{}({}): [{}!]", &typ.name, params.join(", "), &typ.name);
                     mutations.push(query);
@@ -235,7 +243,12 @@ impl Printer for Query {
 }
 
 impl Printer for Mutation {
-    fn serialize(&self, mut buffer: Buffer) -> Buffer {
+    fn serialize(&self, mut buffer: Buffer) -> Buffer { buffer }
+}
+
+impl Generate for Mutation {
+    fn generate(&self) -> CodeFragment {
+        let mut buffer = Buffer::default();
         buffer += "type Mutation {";
         buffer.indent();
         for query in self.mutations.clone() {
@@ -248,16 +261,15 @@ impl Printer for Mutation {
         buffer += "}";
         buffer.new_line();
         buffer.new_line();
-        buffer
     }
 }
 
-impl Printer for Document {
-    fn serialize(&self, mut buffer: Buffer) -> Buffer {
+impl Document {
+    fn generate(&self) -> CodePage {
+        let buf = Buffer::default();
         for typ in self.types.clone() {
-            buffer = typ.serialize(buffer);
+            buf = typ.serialize(buffer);
         }
-        buffer = self.schema.serialize(buffer);
-        buffer
+        buffer = self.schema.serialize(buffer)
     }
 }

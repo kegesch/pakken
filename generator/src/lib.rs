@@ -5,10 +5,11 @@ use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use std::ops::{Add, AddAssign};
 use std::path::{Path, PathBuf};
+use util::buffer::Buffer;
 use util::error::{PakError, PakResult};
 use util::project::Project;
 use util::target::TargetRepository;
-use util::{Model, Save, GENERATOR_FILE_ENDING};
+use util::{Merge, Model, Save, GENERATOR_FILE_ENDING};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Generator {
@@ -31,11 +32,11 @@ impl Generator {
         let project = Project::read()?;
         let model = Model::new(project.model);
         let target = target_repo.find(self.target_name.as_str())?;
-        target.generate_from(model)?.save_at(self.path.as_path())?;
-
-        // merge
-
+        let generated = target.generate_from(model)?;
+        // diffing
+        let merged = target.load().merge(generated);
         // save
+        merged.save_at(self.path.as_path())?;
         Ok(())
     }
 
@@ -92,53 +93,4 @@ impl GeneratorBuilder {
 
 pub trait Transform<M> {
     fn transform(model: &M) -> Self;
-}
-
-pub struct Buffer {
-    buffer: String,
-    indents: i8,
-    indent_string: &'static str,
-}
-
-impl Buffer {
-    pub fn default() -> Buffer { Buffer { buffer: String::new(), indent_string: "\t", indents: 0 } }
-
-    pub fn indent(&mut self) { self.indents += 1; }
-
-    pub fn unindent(&mut self) { self.indents -= 1; }
-
-    pub fn new_line(&mut self) {
-        self.buffer.push_str("\n");
-        for _ in 0 .. self.indents {
-            self.buffer.push_str(self.indent_string);
-        }
-    }
-
-    pub fn flush(self) -> String { self.buffer }
-}
-
-impl Add<&'_ str> for Buffer {
-    type Output = Buffer;
-
-    fn add(mut self, rhs: &'_ str) -> Self::Output {
-        self.buffer.push_str(rhs);
-        self
-    }
-}
-
-impl Add<Buffer> for Buffer {
-    type Output = Buffer;
-
-    fn add(mut self, rhs: Buffer) -> Self::Output {
-        self.buffer.push_str(rhs.flush().as_str());
-        self
-    }
-}
-
-impl AddAssign<&str> for Buffer {
-    fn add_assign(&mut self, rhs: &str) { self.buffer.push_str(rhs); }
-}
-
-pub trait Printer {
-    fn serialize(&self, buffer: Buffer) -> Buffer;
 }

@@ -26,7 +26,7 @@ impl TargetRepository {
         if let Some(target) = self.targets.iter().find(|t| t.name() == target_name) {
             Ok(target.as_ref())
         } else {
-            Err(PakError::TargetNotFound(String::from(target_name)))
+            Err(PakError::TargetNotFound(target_name.to_owned()))
         }
     }
 }
