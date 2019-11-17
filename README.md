@@ -83,6 +83,21 @@ A target is a language / framework / platform which the code should be generated
   - [ ] C#
   - [ ] Rust
 
+## Related Work
+There are already some projects that aim at code generation to boost the efficiency of developing apps.
+ * [Yeoman](https://yeoman.io/) helps you to scaffold your project structure based on already designed generators.
+ * [NinjaCodeGen](https://ninjacodegen.com/) seems outdated and was just designed for Angular.
+ * [Conjure](https://github.com/palantir/conjure) generates you a backend api based on a description of that and can also generate types/code for that api in specific languages/frameworks.
+ 
+Do differentiate `Pakken` from those it has following goals. 
+
+## Goals
+ * Domain Driven Development
+ * Code Generation
+   * Implemented code for the domain based on best practices in that language / framework
+   * Tests (as far as possible)
+ * Seamless inter operation between all generated code
+
 ## Contributing
 Although contributing is very welcome. At the moment this project is not yet planned.
 If you are interested about this project / low-code or code-generation in general, feel free to submit an issue with your wishes or expectations.
