@@ -6,7 +6,7 @@ use parser::parse_from_file;
 use util::buffer::Buffer;
 use util::error::PakResult;
 use util::target::Target;
-use util::{CodeFragment, CodePage, FileStructure, Generate, Model};
+use util::{CodeFragment, CodePage, FileStructure, Generate, GeneratedCode, Model};
 
 #[derive(Default)]
 pub struct GraphQLTarget {}
@@ -166,34 +166,36 @@ impl Transform<Entity> for Typed {
     }
 }
 
-impl Printer for Field {
-    fn serialize(&self, mut buffer: Buffer) -> Buffer {
+impl Field {
+    fn generate(&self) -> String {
+        let mut buffer = Buffer::default();
         buffer += self.name.as_str();
         buffer += ": ";
         buffer += self.typ.as_str();
-        buffer
+
+        buffer.flush()
     }
 }
 
-impl Printer for Typed {
-    fn serialize(&self, mut buffer: Buffer) -> Buffer {
+impl Generate for Typed {
+    fn generate(&self) -> GeneratedCode {
         match self {
-            Typed::Type(t) => buffer = t.serialize(buffer),
+            Typed::Type(t) => t.generate(),
             Typed::None => (),
         }
-        buffer
     }
 }
 
-impl Printer for Type {
-    fn serialize(&self, mut buffer: Buffer) -> Buffer {
+impl Generate for Type {
+    fn generate(&self) -> GeneratedCode {
+        let mut buffer = Buffer::default();
         buffer += "type ";
         buffer += self.name.as_str();
         buffer += " {";
         buffer.indent();
         for field in self.fields.clone() {
             buffer.new_line();
-            buffer = field.serialize(buffer);
+            buffer += field.generate();
             buffer += ",";
         }
         buffer.unindent();
@@ -201,12 +203,14 @@ impl Printer for Type {
         buffer += "}";
         buffer.new_line();
         buffer.new_line();
-        buffer
+
+        GeneratedCode { code: buffer.flush(), id: self.name.clone() }
     }
 }
 
-impl Printer for Schema {
-    fn serialize(&self, mut buffer: Buffer) -> Buffer {
+impl Generate for Schema {
+    fn generate(&self) -> GeneratedCode {
+        let mut buffer = Buffer::default();
         buffer += "schema {";
         buffer.indent();
         buffer.new_line();
@@ -220,12 +224,14 @@ impl Printer for Schema {
         buffer.new_line();
         buffer = self.mutation.serialize(buffer);
         buffer = self.query.serialize(buffer);
-        buffer
+
+        GeneratedCode { code: buffer.flush(), id: "schema".to_string() }
     }
 }
 
-impl Printer for Query {
-    fn serialize(&self, mut buffer: Buffer) -> Buffer {
+impl Generate for Query {
+    fn generate(&self) -> GeneratedCode {
+        let mut buffer = Buffer::default();
         buffer += "type Query {";
         buffer.indent();
         for query in self.queries.clone() {
@@ -238,16 +244,13 @@ impl Printer for Query {
         buffer += "}";
         buffer.new_line();
         buffer.new_line();
-        buffer
+
+        GeneratedCode { code: buffer.flush(), id: "Query".to_string() }
     }
 }
 
-impl Printer for Mutation {
-    fn serialize(&self, mut buffer: Buffer) -> Buffer { buffer }
-}
-
 impl Generate for Mutation {
-    fn generate(&self) -> CodeFragment {
+    fn generate(&self) -> GeneratedCode {
         let mut buffer = Buffer::default();
         buffer += "type Mutation {";
         buffer.indent();
@@ -261,15 +264,19 @@ impl Generate for Mutation {
         buffer += "}";
         buffer.new_line();
         buffer.new_line();
+        GeneratedCode { code: buffer.flush(), id: "Mutation".to_string() }
     }
 }
 
 impl Document {
     fn generate(&self) -> CodePage {
         let buf = Buffer::default();
+        let mut codepage = CodePage::default("#");
+
         for typ in self.types.clone() {
-            buf = typ.serialize(buffer);
+            codepage.add(typ.generate().to_fragment());
         }
-        buffer = self.schema.serialize(buffer)
+        codepage.add(self.schema.generate().to_fragment());
+        copepage
     }
 }

@@ -92,11 +92,11 @@ pub struct CodePage {
 }
 
 impl CodePage {
-    fn default(comment_string: &'static str) -> CodePage {
+    pub fn default(comment_string: &'static str) -> CodePage {
         CodePage { fragments: vec![], comment_string }
     }
 
-    fn add(&mut self, fragment: CodeFragment) { self.fragments.push(fragment); }
+    pub fn add(&mut self, fragment: CodeFragment) { self.fragments.push(fragment); }
 
     fn build(&self) -> String {
         let mut buffer = Buffer::default();
@@ -146,7 +146,7 @@ pub struct GeneratedCode {
 }
 
 impl GeneratedCode {
-    fn to_fragment(&self) -> CodeFragment { CodeFragment::Generated(self.clone()) }
+    pub fn to_fragment(&self) -> CodeFragment { CodeFragment::Generated(self.clone()) }
 }
 
 pub trait Fragment {
