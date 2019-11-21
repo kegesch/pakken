@@ -26,17 +26,19 @@ pub struct TargetOptions; // This will contain all the options for a target
 
 impl Generator {
     pub fn generate(&self, target_repo: &TargetRepository) -> PakResult<()> {
-        // generate new code
         let project = Project::read()?;
         let model = Model::new(project.model);
         let target = target_repo.find(self.target_name.as_str())?;
         let generated = target.generate_from(model)?;
-        if let Some(shadowed) = generated.load_shadow_from(self.path.as_path()) {
-            println!("merging now: {:#?}", &shadowed);
-            shadowed.merge(&generated).save_at(self.path.as_path())?;
+        println!("Generated {:#?}", &generated);
+        if let Some(shadowed) = generated.load_shadow_from(self.path.as_path())? {
+            println!("Shadowed {:#?}", &shadowed);
+            let merged = shadowed.merge(&generated);
+            println!("Merged {:#?}", &merged);
+            merged.save_at(self.path.as_path())?;
+        } else {
+            generated.save_at(self.path.as_path())?;
         }
-        // save
-        generated.save_at(self.path.as_path())?;
         Ok(())
     }
 
