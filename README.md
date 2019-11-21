@@ -87,7 +87,7 @@ A target is a language / framework / platform which the code should be generated
 There are already some projects that aim at code generation to boost the efficiency of developing apps.
  * [Yeoman](https://yeoman.io/) helps you to scaffold your project structure based on already designed generators.
  * [NinjaCodeGen](https://ninjacodegen.com/) seems outdated and was just designed for Angular.
- * [Conjure](https://github.com/palantir/conjure) generates you a backend api based on a description of that and can also generate types/code for that api in specific languages/frameworks.
+ * [Conjure](https://github.com/palantir/conjure) generates you a backend api based on a DESCRIPTION of that and can also generate types/code for that api in specific languages/frameworks.
  
 Do differentiate `Pakken` from those it has following goals. 
 
