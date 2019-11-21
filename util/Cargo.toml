@@ -12,4 +12,3 @@ ron = "0.5.1"
 displaydoc = "0.1.4"
 thiserror = "~1.0"
 serde_traitobject = "0.2.3" # needs nightly
-difference = "2.0.0"
