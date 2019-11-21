@@ -3,7 +3,7 @@ name = "pakken"
 version = "0.1.0"
 authors = ["Jonas Geschke <mail@yonny.de>"]
 edition = "2018"
-description = "Concept of model driven development and scaffolding for everything."
+DESCRIPTION = "Concept of model driven development and scaffolding for everything."
 
 [dependencies]
 parser = { path = "./parser" }

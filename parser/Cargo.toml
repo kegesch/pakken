@@ -5,7 +5,7 @@ authors = ["Jonas Geschke <mail@yonny.de>"]
 edition = "2018"
 repository = "https://github.com/kegesch/pakken.git"
 homepage = "https://github.com/kegesch/pakken"
-description = "Parser for Pakken"
+DESCRIPTION = "Parser for Pakken"
 license = "MIT"
 
 [dependencies]

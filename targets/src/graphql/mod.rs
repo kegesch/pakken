@@ -1,12 +1,12 @@
 use ast::Multiplicity::{Concrete, Optional, UnderUpper};
 use ast::Number::Discrete;
 use ast::{Entity, Identifying, Namespace};
-use generator::{Buffer, Printer, Transform};
+use generator::Transform;
 use parser::parse_from_file;
 use util::buffer::Buffer;
 use util::error::PakResult;
 use util::target::Target;
-use util::{CodeFragment, CodePage, FileStructure, Generate, GeneratedCode, Model};
+use util::{CodePage, FileStructure, Generate, GeneratedCode, Model};
 
 #[derive(Default)]
 pub struct GraphQLTarget {}
@@ -177,11 +177,11 @@ impl Field {
     }
 }
 
-impl Generate for Typed {
-    fn generate(&self) -> GeneratedCode {
+impl Typed {
+    fn generate(&self) -> Option<GeneratedCode> {
         match self {
-            Typed::Type(t) => t.generate(),
-            Typed::None => (),
+            Typed::Type(t) => Some(t.generate()),
+            Typed::None => None,
         }
     }
 }
@@ -195,14 +195,12 @@ impl Generate for Type {
         buffer.indent();
         for field in self.fields.clone() {
             buffer.new_line();
-            buffer += field.generate();
+            buffer += field.generate().as_str();
             buffer += ",";
         }
         buffer.unindent();
         buffer.new_line();
         buffer += "}";
-        buffer.new_line();
-        buffer.new_line();
 
         GeneratedCode { code: buffer.flush(), id: self.name.clone() }
     }
@@ -222,15 +220,16 @@ impl Generate for Schema {
         buffer += "}";
         buffer.new_line();
         buffer.new_line();
-        buffer = self.mutation.serialize(buffer);
-        buffer = self.query.serialize(buffer);
+        buffer += self.mutation.generate().as_str();
+        buffer.new_line();
+        buffer += self.query.generate().as_str();
 
         GeneratedCode { code: buffer.flush(), id: "schema".to_string() }
     }
 }
 
-impl Generate for Query {
-    fn generate(&self) -> GeneratedCode {
+impl Query {
+    fn generate(&self) -> String {
         let mut buffer = Buffer::default();
         buffer += "type Query {";
         buffer.indent();
@@ -242,15 +241,13 @@ impl Generate for Query {
         buffer.unindent();
         buffer.new_line();
         buffer += "}";
-        buffer.new_line();
-        buffer.new_line();
 
-        GeneratedCode { code: buffer.flush(), id: "Query".to_string() }
+        buffer.flush()
     }
 }
 
-impl Generate for Mutation {
-    fn generate(&self) -> GeneratedCode {
+impl Mutation {
+    fn generate(&self) -> String {
         let mut buffer = Buffer::default();
         buffer += "type Mutation {";
         buffer.indent();
@@ -262,21 +259,20 @@ impl Generate for Mutation {
         buffer.unindent();
         buffer.new_line();
         buffer += "}";
-        buffer.new_line();
-        buffer.new_line();
-        GeneratedCode { code: buffer.flush(), id: "Mutation".to_string() }
+        buffer.flush()
     }
 }
 
 impl Document {
     fn generate(&self) -> CodePage {
-        let buf = Buffer::default();
         let mut codepage = CodePage::default("#");
 
         for typ in self.types.clone() {
-            codepage.add(typ.generate().to_fragment());
+            if let Some(generated) = typ.generate() {
+                codepage.add(generated.to_fragment());
+            }
         }
         codepage.add(self.schema.generate().to_fragment());
-        copepage
+        codepage
     }
 }

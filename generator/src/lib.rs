@@ -3,9 +3,7 @@ use ron::ser::{to_string_pretty, PrettyConfig};
 use serde::{Deserialize, Serialize};
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
-use std::ops::{Add, AddAssign};
 use std::path::{Path, PathBuf};
-use util::buffer::Buffer;
 use util::error::{PakError, PakResult};
 use util::project::Project;
 use util::target::TargetRepository;
@@ -33,10 +31,12 @@ impl Generator {
         let model = Model::new(project.model);
         let target = target_repo.find(self.target_name.as_str())?;
         let generated = target.generate_from(model)?;
-        // diffing
-        let merged = target.load().merge(generated);
+        if let Some(shadowed) = generated.load_shadow_from(self.path.as_path()) {
+            println!("merging now: {:#?}", &shadowed);
+            shadowed.merge(&generated).save_at(self.path.as_path())?;
+        }
         // save
-        merged.save_at(self.path.as_path())?;
+        generated.save_at(self.path.as_path())?;
         Ok(())
     }
 
