@@ -1,5 +1,6 @@
 use crate::error::{PakError, PakResult};
-use crate::{FileStructure, Model};
+use crate::filestructure::FileStructure;
+use crate::Model;
 use std::any::Any;
 
 pub trait Target: Any {

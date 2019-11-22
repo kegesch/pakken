@@ -4,9 +4,11 @@ use ast::{Entity, Identifying, Namespace};
 use generator::Transform;
 use parser::parse_from_file;
 use util::buffer::Buffer;
+use util::code::{CodePage, GeneratedCode};
 use util::error::PakResult;
+use util::filestructure::FileStructure;
 use util::target::Target;
-use util::{CodePage, FileStructure, Generate, GeneratedCode, Model};
+use util::{Generate, Model};
 
 #[derive(Default)]
 pub struct GraphQLTarget {}
@@ -23,11 +25,6 @@ impl Target for GraphQLTarget {
         )]);
         Ok(file_structure)
     }
-}
-
-pub struct GraphQLTargetOptions {
-    add_id: bool,
-    id_type: String,
 }
 
 #[derive(Debug, Clone)]
