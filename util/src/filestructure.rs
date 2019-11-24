@@ -22,7 +22,7 @@ impl FileStructure {
         }
     }
 
-    pub fn find<'a, 'b>(&'a self, name: &'b str) -> Option<(usize, &'a FileStructure)> {
+    pub fn find(&self, name: &str) -> Option<(usize, &FileStructure)> {
         if let FileStructure::Dir(_name, content) = self {
             Self::find_in_content(content, name)
         } else {
@@ -31,7 +31,7 @@ impl FileStructure {
     }
 
     pub fn find_in_content<'a, 'b>(
-        content: &'a Vec<FileStructure>, name: &'b str,
+        content: &'a [FileStructure], name: &'b str,
     ) -> Option<(usize, &'a FileStructure)> {
         for (index, fs) in content.iter().enumerate() {
             match fs {
