@@ -7,6 +7,7 @@
 [![Github Build Status](https://github.com/kegesch/pakken/workflows/Pakken/badge.svg?branch=master)](https://github.com/kegesch/pakken/actions)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fkegesch%2Fpakken.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fkegesch%2Fpakken?ref=badge_shield)
 [![Hits-of-Code](https://hitsofcode.com/github/kegesch/pakken)](https://hitsofcode.com/view/github/kegesch/pakken)
+[![Gitter](https://badges.gitter.im/pakken-dev/community.svg)](https://gitter.im/pakken-dev/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 Pakken is a tool for software development. It aims to provide support to model and design the software with minimal coding effort known as "low code".
 Meaning you design the model of the software and it can generate a basic boilerplate and implementation of the model. For instance it generates the boilerplate for a graphql backend and also generates components in React that automatically are in sync with the backend.
