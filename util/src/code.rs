@@ -13,7 +13,7 @@ impl CodePage {
                                        TO PREVENT THIS CHANGE IT TO @NOT.";
     const END_GENERATED: &'static str = "@END";
     const START_GENERATED: &'static str = "@GENERATED";
-    const START_NOT_GENERATED: &'static str = "@NOT GENERATED";
+    const START_NOT_GENERATED: &'static str = "@NOT";
 
     pub fn default(comment_string: &'static str) -> CodePage {
         CodePage { fragments: vec![], comment_string }
@@ -21,43 +21,74 @@ impl CodePage {
 
     pub fn from(comment_string: &'static str, code: &str) -> CodePage {
         let mut codepage = CodePage::default(comment_string);
+        let removed_comment =
+            code.split_at(code.find("\n").expect("There should be at least two lines.")).1.trim();
+        let splitted_ends = Self::split_ends(comment_string, removed_comment);
+        let fragments = Self::split_fragments(comment_string, splitted_ends);
+        for frag in fragments {
+            codepage.add(frag);
+        }
+        codepage
+    }
+
+    fn split_ends<'a>(comment_string: &'static str, code: &'a str) -> Vec<&'a str> {
+        let splitted: Vec<&str> =
+            code.split(Self::end_comment_str(comment_string).as_str()).collect();
+        splitted.iter().map(|s| s.trim()).filter(|s| !s.is_empty()).collect()
+    }
+
+    fn split_fragments(
+        comment_string: &'static str, splitted_ends: Vec<&str>,
+    ) -> Vec<CodeFragment> {
+        let mut code_fragments = vec![];
+
         let gen_start = Self::start_generated_str(comment_string);
         let gen_start_str = gen_start.as_str();
-        let gen_end = Self::end_comment_str(comment_string);
-        let gen_end_str = gen_end.as_str();
-        let mut next = code.find(gen_start_str);
-        let mut next_code = code;
+        let not_gen_start = Self::start_not_generated_str(comment_string);
+        let not_gen_start_str = not_gen_start.as_str();
 
-        while next.is_some() {
-            next_code = next_code.split_at(next.expect("Should have next.")).1;
-            let split = next_code.split_at(next_code.find('\n').expect("Should have a new line."));
-            let new_code = split.1;
-            let comment = split.0;
-            let end_code = new_code.find(gen_end_str).expect("Should have an end!");
-            let fragment_code = new_code.split_at(end_code).0.trim();
-            let fragment_id = comment.split_at(gen_start_str.len()).1.trim();
-            let fragment = CodeFragment::Generated(GeneratedCode {
-                id: fragment_id.to_string(),
-                code: fragment_code.to_string(),
-            });
-            codepage.add(fragment);
+        for split in splitted_ends {
+            // Each split can either contain only code for one (Not)GeneratedCode or additional code for CodeFragment::Other()
 
-            let not_generated = new_code.split_at(end_code).1;
-            let start =
-                not_generated.split_at(not_generated.find('\n').expect("Should be next line")).1;
-            if let Some(end_index) = start.find(gen_start_str) {
-                let custom_code = start.split_at(end_index).0.trim();
-                if !custom_code.is_empty() {
-                    codepage.add(CodeFragment::Other(custom_code.to_string()))
-                }
+            let split_location;
+            let is_generated;
+            if let Some(found) = split.find(gen_start_str) {
+                split_location = found;
+                is_generated = true;
+            } else if let Some(found) = split.find(not_gen_start_str) {
+                split_location = found;
+                is_generated = false;
+            } else {
+                // This should not happen!!
+                panic!("Found an end without heading @generated or @not");
             }
-            // TODO handle not generated code fragment and check with id
-            next = start.find(gen_start_str);
 
-            next_code = start;
+            let new_split = split.split_at(split_location);
+            let before = new_split.0.trim();
+            let after = new_split.1;
+            let comment_code = after.split_at(after.find("\n").expect("Should have next line."));
+            let code = comment_code.1.trim();
+            if is_generated {
+                let id = comment_code.0.split_at(gen_start_str.len()).1.trim();
+                let fragment = CodeFragment::Generated(GeneratedCode {
+                    id: id.to_string(),
+                    code: code.to_string(),
+                });
+                code_fragments.push(fragment);
+            } else {
+                let id = comment_code.0.split_at(not_gen_start_str.len()).1.trim();
+                let fragment = CodeFragment::NotGenerated(GeneratedCode {
+                    id: id.to_string(),
+                    code: code.to_string(),
+                });
+                code_fragments.push(fragment);
+            }
+
+            if !before.is_empty() {
+                code_fragments.push(CodeFragment::Other(before.to_string()));
+            }
         }
-
-        codepage
+        code_fragments
     }
 
     pub fn add(&mut self, fragment: CodeFragment) { self.fragments.push(fragment); }
@@ -107,6 +138,7 @@ impl CodePage {
                 },
                 CodeFragment::NotGenerated(not_generated) => {
                     buffer += Self::start_not_generated_str(self.comment_string).as_str();
+                    buffer += " ";
                     buffer += not_generated.id.as_str();
                     buffer.new_line();
                     buffer += not_generated.code.as_str();
@@ -119,9 +151,20 @@ impl CodePage {
         buffer.flush()
     }
 
-    fn get_generated(&self, code_id: &str) -> Option<GeneratedCode> {
-        for frag in &self.fragments {
+    fn find_generated(&self, code_id: &str) -> Option<(usize, GeneratedCode)> {
+        for (index, frag) in (&self.fragments).iter().enumerate() {
             if let CodeFragment::Generated(generated) = frag {
+                if generated.id == code_id.to_string() {
+                    return Some((index, generated.clone()));
+                }
+            }
+        }
+        None
+    }
+
+    fn get_not_generated(&self, code_id: &str) -> Option<GeneratedCode> {
+        for frag in &self.fragments {
+            if let CodeFragment::NotGenerated(generated) = frag {
                 if generated.id == code_id.to_string() {
                     return Some(generated.clone());
                 }
@@ -155,17 +198,23 @@ pub trait Fragment {
 impl Merge for CodePage {
     fn merge(&self, other: &Self) -> Self {
         let mut new_code_page = CodePage::default(self.comment_string);
-
         for frag in &self.fragments {
             match frag {
-                CodeFragment::Generated(code) => {
-                    if let Some(other_generated) = other.get_generated(&code.id) {
-                        new_code_page.add(CodeFragment::Generated(other_generated));
-                    }
-                },
-                _ => {
+                CodeFragment::NotGenerated(_code) => {
                     new_code_page.add(frag.clone());
                 },
+                CodeFragment::Other(_code) => {
+                    new_code_page.add(frag.clone());
+                },
+                _ => (),
+            }
+        }
+        for frag in &other.fragments {
+            if let CodeFragment::Generated(code) = frag {
+                let found_not_generated = new_code_page.get_not_generated(code.id.as_str());
+                if found_not_generated.is_none() {
+                    new_code_page.add(frag.clone());
+                }
             }
         }
 

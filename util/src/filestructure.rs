@@ -15,25 +15,36 @@ pub enum FileStructure {
 }
 
 impl FileStructure {
-    pub fn find<'a>(&self, other: &'a FileStructure) -> Option<&'a FileStructure> {
+    pub fn get_name(&self) -> &str {
+        match self {
+            FileStructure::File(name, _content) => name,
+            FileStructure::Dir(name, _content) => name,
+        }
+    }
+
+    pub fn find<'a, 'b>(&'a self, name: &'b str) -> Option<(usize, &'a FileStructure)> {
         if let FileStructure::Dir(_name, content) = self {
-            for fs in content {
-                match fs {
-                    FileStructure::File(name, _content) => {
-                        if let FileStructure::File(other_name, _other_content) = other {
-                            if name == other_name {
-                                return Some(other);
-                            }
-                        }
-                    },
-                    FileStructure::Dir(name, _content) => {
-                        if let FileStructure::Dir(other_name, _other_content) = other {
-                            if name == other_name {
-                                return Some(other);
-                            }
-                        }
-                    },
-                }
+            Self::find_in_content(content, name)
+        } else {
+            None
+        }
+    }
+
+    pub fn find_in_content<'a, 'b>(
+        content: &'a Vec<FileStructure>, name: &'b str,
+    ) -> Option<(usize, &'a FileStructure)> {
+        for (index, fs) in content.iter().enumerate() {
+            match fs {
+                FileStructure::File(fs_name, _content) => {
+                    if fs_name == name {
+                        return Some((index, fs));
+                    }
+                },
+                FileStructure::Dir(fs_name, _content) => {
+                    if fs_name == name {
+                        return Some((index, fs));
+                    }
+                },
             }
         }
         None
@@ -117,14 +128,21 @@ impl Merge for FileStructure {
                 FileStructure::Dir("./".to_owned(), vec![self.clone(), other.clone()])
             },
             FileStructure::Dir(name, content) => {
-                if let FileStructure::Dir(other_name, _other_content) = other {
+                if let FileStructure::Dir(other_name, other_content) = other {
                     if name == other_name {
                         let mut merged_content = vec![];
-                        for fs in content {
-                            if let Some(found) = other.find(fs) {
-                                merged_content.push(fs.merge(found));
+                        for fs in other_content {
+                            if let Some((index, found)) = self.find(fs.get_name()) {
+                                merged_content.insert(index, found.merge(fs));
                             } else {
                                 merged_content.push(fs.clone());
+                            }
+                        }
+                        for fs in content {
+                            if FileStructure::find_in_content(&merged_content, fs.get_name())
+                                .is_none()
+                            {
+                                merged_content.push(fs.clone())
                             }
                         }
                         return FileStructure::Dir(name.clone(), merged_content);
