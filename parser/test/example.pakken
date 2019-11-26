@@ -2,6 +2,7 @@ org.mobile {
     Tire {
         material: String
     }
+    // This is a comment
     Person {
         name: String
     }
@@ -12,7 +13,7 @@ org.mobile {
     }
     Bike : Vehicle {
         tires: Tire [2,4],
-        ride(person: Person)qqq
+        ride(person: Person)
     }
     Car : Vehicle {
         tires: Tire [4]
