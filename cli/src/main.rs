@@ -15,6 +15,7 @@ use std::path::Path;
 use std::process::Command;
 use std::{fs, io, process};
 use targets::graphql::GraphQLTarget;
+use targets::typescript::TypeScriptTarget;
 use util::error::{PakError, PakResult};
 use util::project::Project;
 use util::target::TargetRepository;
@@ -89,6 +90,7 @@ fn load_targets() -> PakResult<()> {
     // TODO handle this error
     let mut repo = TARGET_REPO.write().unwrap();
     repo.add(Box::from(GraphQLTarget::default()))?;
+    repo.add(Box::from(TypeScriptTarget::default()))?;
     Ok(())
 }
 
