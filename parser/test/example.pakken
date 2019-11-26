@@ -1,4 +1,10 @@
 org.mobile {
+    Tire {
+        material: String
+    }
+    Person {
+        name: String
+    }
     Vehicle {
         name: String,
         tires: Tire [+],
@@ -6,12 +12,13 @@ org.mobile {
     }
     Bike : Vehicle {
         tires: Tire [2,4],
-        ride(person: Person): String
+        ride(person: Person)qqq
     }
     Car : Vehicle {
         tires: Tire [4]
     }
-    Person {
-        name: String?
+    Enum {
+        value1 = 2,
+        value2
     }
 }

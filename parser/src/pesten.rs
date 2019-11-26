@@ -4,6 +4,8 @@ use pest::iterators::Pair;
 use pest::Parser;
 use pest_derive::*;
 
+pub type PakkenRule = Rule;
+
 #[derive(Parser)]
 #[grammar = "pakken.pest"]
 struct PakkenParser;
@@ -15,4 +17,9 @@ pub trait Parsable: Sized {
         let result: Option<Pair<Rule>> = PakkenParser::parse(rule, code)?.next();
         Self::from_pest(result.ok_or(ParserError::NoToken)?)
     }
+}
+
+pub fn lex(code: &str) -> ParserResult<()> {
+    PakkenParser::parse(Rule::pakken, code)?;
+    Ok(())
 }

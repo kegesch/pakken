@@ -48,7 +48,7 @@ impl Identifying for Scalar {
 #[derive(Debug, Clone)]
 pub struct Enum {
     pub identifier: Identifier,
-    pub values: (String, Option<usize>),
+    pub values: Vec<(String, Option<usize>)>,
 }
 
 impl Identifying for Enum {
@@ -115,6 +115,6 @@ pub struct Parameter {
 #[derive(Debug, Clone)]
 pub struct Operation {
     pub name: String,
-    pub returns: Rc<Entity>,
+    pub returns: Option<Rc<Entity>>,
     pub parameter: Vec<Parameter>,
 }

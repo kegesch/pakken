@@ -5,8 +5,8 @@ use crate::error::ParserError;
 use crate::pesten::{Parsable, Rule};
 use crate::ParserResult;
 use ast::Entity::Scalar as EScalar;
-use ast::Scalar;
 use ast::{Entity, Identifier, Multiplicity, Namespace, Number};
+use ast::{Enum, Scalar};
 use pest::iterators::Pair;
 use std::rc::Rc;
 
@@ -27,10 +27,21 @@ impl Parsable for Namespace {
 
         for inner_pair in inner_pairs {
             match inner_pair.as_rule() {
-                Rule::entity => {
-                    let struc = DanglingStructure::from_pest(inner_pair)?;
-                    let entity = Entity::Structure(struc.undangle(&namespace)?);
-                    namespace.add_entity(Rc::new(entity));
+                Rule::entitytype => {
+                    let entity_type =
+                        inner_pair.into_inner().next().expect("There must be a type of entity.");
+                    match entity_type.as_rule() {
+                        Rule::entity => {
+                            let struc = DanglingStructure::from_pest(entity_type)?;
+                            let entity = Entity::Structure(struc.undangle(&namespace)?);
+                            namespace.add_entity(Rc::new(entity));
+                        },
+                        Rule::enumeration => {
+                            let enumeration = Entity::Enum(Enum::from_pest(entity_type)?);
+                            namespace.add_entity(Rc::new(enumeration));
+                        },
+                        other => return Err(ParserError::InvalidRule(other)),
+                    }
                 },
                 other => return Err(ParserError::InvalidRule(other)),
             }
@@ -107,9 +118,12 @@ impl Parsable for DanglingOperation {
                 parameter.push(DanglingParameter::from_pest(parameter_pair)?);
             }
         }
-
-        let returns_identifier =
-            String::from(inner_pairs.next().expect("This should be the return type.").as_str());
+        let returns_identifier: Option<String>;
+        if let Some(returns) = inner_pairs.next() {
+            returns_identifier = Some(returns.as_str().to_string());
+        } else {
+            returns_identifier = None;
+        }
 
         Ok(DanglingOperation { name, parameter, returns: returns_identifier })
     }
@@ -181,22 +195,60 @@ impl Parsable for Multiplicity {
     }
 }
 
-#[cfg(tests)]
+impl Parsable for Enum {
+    fn from_pest(pair: Pair<Rule>) -> ParserResult<Self> {
+        let mut inner_pairs = pair.into_inner();
+        let name = inner_pairs.next().expect("Enumeration should have a name.").as_str();
+        let mut members = vec![];
+        for pair in inner_pairs {
+            let mut member_pairs = pair.into_inner();
+            let member_name =
+                member_pairs.next().expect("Enumeration member should have a name.").as_str();
+            let member_value = member_pairs.next().map(|i| i.as_str().parse::<usize>().unwrap());
+            members.push((member_name.to_string(), member_value));
+        }
+        Ok(Enum { identifier: name.to_string(), values: members })
+    }
+}
+
+#[cfg(test)]
 mod tests {
+    use crate::dangling::DanglingStructure;
     use crate::error::ParserError;
-    use crate::pesten::Parsable;
+    use crate::pesten::{PakkenRule, Parsable};
     use ast::Namespace;
 
     #[test]
     fn parse_namespace_ok() {
         let code = "namespace.is.lit {}";
         let expected = Namespace { identifier: String::from("namespace.is.lit"), entities: vec![] };
-        assert_eq!(Namespace::pest_parse(Rule::namespace, code), expected);
+        let parsed =
+            Namespace::pest_parse(PakkenRule::namespace, code).expect("Should have parsed");
+        assert_eq!(parsed.identifier, expected.identifier);
     }
 
     #[test]
     fn parse_namespace_fail() {
         let code = "namespace.is.lit";
-        assert_eq!(Namespace::pest_parse(Rule::namespace, code), ParserError::ParsingError);
+        let parsed = Namespace::pest_parse(PakkenRule::namespace, code);
+        if let ParserError::ParsingError(_, _) = parsed.unwrap_err() {
+            assert_eq!(true, true);
+        } else {
+            assert_eq!(true, false);
+        }
+    }
+
+    #[test]
+    fn parse_structure() {
+        let code = "Name { attribute: String, operation() }";
+        let expected = DanglingStructure {
+            name: "Name".to_string(),
+            parent: None,
+            attributes: vec![],
+            operations: vec![],
+        };
+
+        let parsed = DanglingStructure::pest_parse(PakkenRule::entitytype, code)
+            .expect("Should have parsed");
     }
 }

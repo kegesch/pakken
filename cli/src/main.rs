@@ -75,7 +75,7 @@ fn pakken(matches: &ArgMatches) -> PakResult<()> {
             println!("{:?}", file);
             if let Ok(code) = file {
                 println!("Parsing! {:?}", code);
-                println!("Result: {:?}", parse(code.as_str()));
+                println!("Result: {:#?}", parse(code.as_str()));
                 Ok(())
             } else {
                 let message = format!("Could not read file {}", path.display());

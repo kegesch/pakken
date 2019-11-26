@@ -27,7 +27,7 @@ pub struct DanglingParameter {
 #[derive(Debug, Clone)]
 pub struct DanglingOperation {
     pub name: String,
-    pub returns: String,
+    pub returns: Option<String>,
     pub parameter: Vec<DanglingParameter>,
 }
 
@@ -59,18 +59,27 @@ impl Undangle for DanglingOperation {
     type Undangled = Operation;
 
     fn undangle(&self, namespace: &Namespace) -> ParserResult<Self::Undangled> {
-        let result: ParserResult<Rc<Entity>> =
-            Self::resolve(self.returns.as_str(), namespace) as ParserResult<Rc<Entity>>;
-        let resolved = result?;
         let mut undangled_parameters = vec![];
         for param in self.parameter.clone() {
             undangled_parameters.push(param.undangle(namespace)?);
         }
-        Ok(Operation {
-            name: self.name.clone(),
-            returns: resolved,
-            parameter: undangled_parameters,
-        })
+        if let Some(returns) = &self.returns {
+            let result: ParserResult<Rc<Entity>> =
+                Self::resolve(returns.as_str(), namespace) as ParserResult<Rc<Entity>>;
+            let resolved = result?;
+
+            Ok(Operation {
+                name: self.name.clone(),
+                returns: Some(resolved),
+                parameter: undangled_parameters,
+            })
+        } else {
+            Ok(Operation {
+                name: self.name.clone(),
+                returns: None,
+                parameter: undangled_parameters,
+            })
+        }
     }
 }
 
