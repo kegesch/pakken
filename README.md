@@ -1,5 +1,5 @@
 <p align="center">
-<img src="docs/media/logo.png" alt="Pakken logo" height="200" width="200" id="readme-logo">
+<img src="docs/media/logo.png" alt="Pakken logo" width="400" id="readme-logo">
 
 # Pakken
 </p>
