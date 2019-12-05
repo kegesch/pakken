@@ -59,9 +59,8 @@ It will also create a generator file `<targetname>.pgen` containing settings for
 - [x] Start to develop a CLI for the tool
 - [ ] Basic implementation of a workflow (MVP)
   - [x] Design architecture for the different targets 
-  - [ ] Implement one example target
+  - [x] Implement one example target
   - [ ] Think about glueing different targets together
-  - [ ] Evaluate how [Conjure](https://github.com/palantir/conjure) plays with this
 - [ ] Evaluate this concept and change accordingly
 - [ ] Refactor code base according to the new plan
 - [ ] Write documentation
@@ -89,7 +88,8 @@ A target is a language / framework / platform which the code should be generated
 There are already some projects that aim at code generation to boost the efficiency of developing apps.
  * [Yeoman](https://yeoman.io/) helps you to scaffold your project structure based on already designed generators.
  * [NinjaCodeGen](https://ninjacodegen.com/) seems outdated and was just designed for Angular.
- * [Conjure](https://github.com/palantir/conjure) generates you a backend api based on a DESCRIPTION of that and can also generate types/code for that api in specific languages/frameworks.
+ * [Conjure](https://github.com/palantir/conjure) generates you a backend api based on a description of that and can also generate types/code for that api in specific languages/frameworks.
+ * [Prisma](https://www.prisma.io/) handles your database and generates language abstraction based on a graphql model.
  
 Do differentiate `Pakken` from those it has following goals. 
 
