@@ -90,6 +90,7 @@ There are already some projects that aim at code generation to boost the efficie
  * [NinjaCodeGen](https://ninjacodegen.com/) seems outdated and was just designed for Angular.
  * [Conjure](https://github.com/palantir/conjure) generates you a backend api based on a description of that and can also generate types/code for that api in specific languages/frameworks.
  * [Prisma](https://www.prisma.io/) handles your database and generates language abstraction based on a graphql model.
+ * [Ecore](https://www.eclipse.org/modeling/emf/) promises a lot of modelling tools. But in reality it is really hard to work with it which is the reason I started building `Pakken`
  
 Do differentiate `Pakken` from those it has following goals. 
 
