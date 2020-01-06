@@ -15,11 +15,18 @@ subcommands:
       about: Generates the code for a specific target
       args:
         - target:
-            required: true
             help: Specifies the target of the code generation
             takes_value: true
         - force:
             help: Recreates the generator from scratch
             long: force
+        - list:
+            help: Lists all installed generators
+            long: list
+      groups:
+        - gen-target:
+            args:
+              - target
+              - force
   - test:
       about: tests parsing

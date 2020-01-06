@@ -1,18 +1,15 @@
 #[macro_use]
 extern crate clap;
 
-#[macro_use]
-extern crate lazy_static;
-extern crate mut_static;
-
 use clap::{load_yaml, App, AppSettings::ColoredHelp, AppSettings::SubcommandRequired, ArgMatches};
 use colored::Colorize;
 use generator::{Generator, GeneratorBuilder};
-use mut_static::MutStatic;
+use once_cell::sync::Lazy;
 use parser::parse;
 use std::fs::{create_dir, remove_dir, File};
 use std::path::Path;
 use std::process::Command;
+use std::sync::Mutex;
 use std::{fs, io, process};
 use targets::graphql::GraphQLTarget;
 use targets::typescript::TypeScriptTarget;
@@ -26,10 +23,9 @@ macro_rules! status {
         print!("\r{}", $x)
     };
 }
-lazy_static! {
-    static ref TARGET_REPO: MutStatic<TargetRepository> =
-        { MutStatic::from(TargetRepository::default()) };
-}
+
+static TARGET_REPO: Lazy<Mutex<TargetRepository>> =
+    Lazy::new(|| Mutex::new(TargetRepository::default()));
 
 fn main() {
     let yaml = load_yaml!("pakken.yml");
@@ -64,10 +60,7 @@ fn pakken(matches: &ArgMatches) -> PakResult<()> {
 
             new(name, path.as_path(), sub.1.unwrap())
         },
-        "gen" => {
-            let target = sub.1.unwrap().value_of("target").unwrap();
-            generate(target, sub.1.unwrap())
-        },
+        "gen" => generate(sub.1.unwrap()),
         _ => {
             let path = Path::new("./parser/test/example.pakken");
             status!(format!("{}", path.display()));
@@ -88,7 +81,7 @@ fn pakken(matches: &ArgMatches) -> PakResult<()> {
 
 fn load_targets() -> PakResult<()> {
     // TODO handle this error
-    let mut repo = TARGET_REPO.write().unwrap();
+    let mut repo = TARGET_REPO.lock().unwrap();
     repo.add(Box::from(GraphQLTarget::default()))?;
     repo.add(Box::from(TypeScriptTarget::default()))?;
     Ok(())
@@ -155,7 +148,23 @@ pub fn git_init(name: &str) {
     }
 }
 
-pub fn generate(target: &str, matches: &ArgMatches) -> PakResult<()> {
+pub fn generate(matches: &ArgMatches) -> PakResult<()> {
+    if matches.is_present("list") {
+        println!("{}", "Installed targets: ".green().bold());
+        let repo = &TARGET_REPO.lock().expect("Should have a value!");
+        for target in repo.list() {
+            println!("{}", target);
+        }
+        println!("\nTo generate code against a target use: {}", "pakken gen <target>".bold());
+
+        return Ok(());
+    }
+
+    if let None = matches.value_of("target") {
+        return Err(PakError::TargetNotFound("NotSpecified".to_owned()));
+    }
+    let target = matches.value_of("target").unwrap();
+
     // This should create a genmodel file which basically binds the ast to the target model and resolved if something should be overwritten or not
     let mut generator_file = String::from(target);
     generator_file.push_str(GENERATOR_FILE_ENDING);
@@ -167,11 +176,11 @@ pub fn generate(target: &str, matches: &ArgMatches) -> PakResult<()> {
         let generator = GeneratorBuilder::new(target).build(out_dir);
         generator.save()?;
         status!("Generating code.");
-        generator.generate(&TARGET_REPO.write().unwrap())?;
+        generator.generate(&TARGET_REPO.lock().unwrap())?;
     } else {
         let generator = Generator::from(path_to_generator.as_path())?;
         status!("Generating code.");
-        generator.generate(&TARGET_REPO.write().unwrap())?;
+        generator.generate(&TARGET_REPO.lock().unwrap())?;
     }
 
     status!(format!("Code generated for Target {}", target));

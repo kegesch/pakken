@@ -3,7 +3,7 @@ use crate::filestructure::FileStructure;
 use crate::Model;
 use std::any::Any;
 
-pub trait Target: Any {
+pub trait Target: Any + Send {
     fn name(&self) -> &'static str;
     fn generate_from(&self, model: Model) -> PakResult<FileStructure>;
 }
@@ -30,4 +30,6 @@ impl TargetRepository {
             Err(PakError::TargetNotFound(target_name.to_owned()))
         }
     }
+
+    pub fn list(&self) -> Vec<String> { self.targets.iter().map(|t| t.name().to_owned()).collect() }
 }
