@@ -87,13 +87,10 @@ impl Transform<Vec<Typed>> for Query {
     fn transform(model: &Vec<Typed>) -> Self {
         let mut queries: Vec<String> = vec![];
         for t in model {
-            match t {
-                Typed::Type(typ) => {
-                    // TODO one for id,
-                    let query = format!("query{}: [{}!]", &typ.name, &typ.name);
-                    queries.push(query);
-                },
-                _ => (),
+            if let Typed::Type(typ) = t {
+                // TODO one for id,
+                let query = format!("query{}: [{}!]", &typ.name, &typ.name);
+                queries.push(query);
             }
         }
         Query { queries }
@@ -104,23 +101,19 @@ impl Transform<Vec<Typed>> for Mutation {
     fn transform(model: &Vec<Typed>) -> Self {
         let mut mutations: Vec<String> = vec![];
         for t in model {
-            match t {
-                Typed::Type(typ) => {
-                    let mut params = vec![];
-                    for attr in typ.fields.clone() {
-                        let mut param = String::new();
-                        param.push_str(attr.name.as_str());
-                        param.push_str(": ");
-                        param.push_str(attr.typ.as_str());
-                        params.push(param);
-                    }
+            if let Typed::Type(typ) = t {
+                let mut params = vec![];
+                for attr in typ.fields.clone() {
+                    let mut param = String::new();
+                    param.push_str(attr.name.as_str());
+                    param.push_str(": ");
+                    param.push_str(attr.typ.as_str());
+                    params.push(param);
+                }
 
-                    // TODO handle id
-                    let query =
-                        format!("create{}({}): [{}!]", &typ.name, params.join(", "), &typ.name);
-                    mutations.push(query);
-                },
-                _ => (),
+                // TODO handle id
+                let query = format!("create{}({}): [{}!]", &typ.name, params.join(", "), &typ.name);
+                mutations.push(query);
             }
         }
         Mutation { mutations }
