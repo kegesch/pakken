@@ -9,6 +9,7 @@ pub mod buffer;
 pub mod code;
 pub mod error;
 pub mod filestructure;
+pub mod log;
 pub mod project;
 pub mod target;
 

@@ -14,18 +14,15 @@ use std::{fs, io, process};
 use targets::graphql::GraphQLTarget;
 use targets::typescript::TypeScriptTarget;
 use util::error::{PakError, PakResult};
+use util::log::{Logger, Logging};
 use util::project::Project;
 use util::target::TargetRepository;
 use util::{GENERATOR_FILE_ENDING, PAKKEN_FILE_ENDING};
 
-macro_rules! status {
-    ($x:expr) => {
-        print!("\r{}", $x)
-    };
-}
-
 static TARGET_REPO: Lazy<Mutex<TargetRepository>> =
     Lazy::new(|| Mutex::new(TargetRepository::default()));
+
+static LOGGER: Lazy<Logger> = Lazy::new(|| Logger::default());
 
 fn main() {
     let yaml = load_yaml!("pakken.yml");
@@ -39,8 +36,7 @@ fn main() {
     match pakken(&matches) {
         Ok(_) => (),
         Err(err) => {
-            status!(format!("{}", "failed".red()));
-            eprintln!("{}: {}", "fatal".red(), err.to_string());
+            LOGGER.error("Fatal", err.to_string().as_str());
             process::exit(1);
         },
     };
@@ -63,13 +59,12 @@ fn pakken(matches: &ArgMatches) -> PakResult<()> {
         "gen" => generate(sub.1.unwrap()),
         _ => {
             let path = Path::new("./parser/test/example.pakken");
-            status!(format!("{}", path.display()));
             let file = fs::read_to_string(path.canonicalize().unwrap());
-            println!("{}", path.canonicalize().unwrap().display());
-            println!("{:?}", file);
             if let Ok(code) = file {
-                println!("Parsing! {:?}", code);
-                println!("Result: {:#?}", parse(code.as_str()));
+                LOGGER.info("Parsing", path.display().to_string().as_str());
+                parse(code.as_str())?;
+                LOGGER.remove_last();
+                LOGGER.info("Parsing", "done");
                 Ok(())
             } else {
                 let message = format!("Could not read file {}", path.display());
@@ -81,43 +76,58 @@ fn pakken(matches: &ArgMatches) -> PakResult<()> {
 
 fn load_targets() -> PakResult<()> {
     // TODO handle this error
+    LOGGER.info("Loading", "targets");
     let mut repo = TARGET_REPO.lock().unwrap();
     repo.add(Box::from(GraphQLTarget::default()))?;
     repo.add(Box::from(TypeScriptTarget::default()))?;
+    LOGGER.remove_last();
+    LOGGER.info("Done", "targets loaded");
     Ok(())
 }
 
 fn new(name: &str, path: &Path, matches: &ArgMatches) -> PakResult<()> {
     if path.exists() {
-        status!("The folder already exists. ");
+        LOGGER.warn("Create", "The folder already exists!");
         if ask_for_override(path) {
-            if let Err(err) = remove_dir(path) {
-                eprintln!("The folder could not be removed. Please use another location.");
-                return Err(PakError::from(err));
+            if let Err(_err) = remove_dir(path) {
+                // eprintln!("The folder could not be removed. Please use another location.");
+                let message = format!(
+                    "The folder {} could not be removed. Please use another location.",
+                    path.display()
+                );
+                return Err(PakError::CustomError(message));
             }
         }
     }
-
+    LOGGER.info("New", "creating project dir");
     create_dir(path)?;
 
     // Boilerplate
     let project = Project::from(name);
+    LOGGER.remove_last();
+    LOGGER.info("New", "saving project structure");
     project.save(path)?;
 
     let mut pakken_file_name: String = String::from(name);
     pakken_file_name.push_str(PAKKEN_FILE_ENDING);
     let pakken_file = path.join(pakken_file_name);
-    status!(format!("Create file {}", pakken_file.display()));
+
+    LOGGER.remove_last();
+    LOGGER.info("New", "creating pakken project file");
+
     if let Err(err) = File::create(pakken_file) {
         return Err(PakError::from(err));
     }
 
     if matches.is_present("git") {
-        status!("Initializing git repo");
+        LOGGER.remove_last();
+        LOGGER.info("New", "initializing git repository");
         git_init(name);
     }
 
-    status!(format!("Done. Project created at {}", path.display()));
+    let message = format!("project created at {}", path.display());
+    LOGGER.remove_last();
+    LOGGER.info("Done", message.as_str());
     Ok(())
 }
 
@@ -143,6 +153,7 @@ pub fn git_init(name: &str) {
     {
         c.wait_with_output().expect("failed to wait on child");
     } else {
+        //TODO log error correct and return result
         eprintln!("{}, git failed to initialize. Is git on your path?", "Error".red());
         std::process::exit(0x0f01);
     }
@@ -150,12 +161,14 @@ pub fn git_init(name: &str) {
 
 pub fn generate(matches: &ArgMatches) -> PakResult<()> {
     if matches.is_present("list") {
-        println!("{}", "Installed targets: ".green().bold());
+        LOGGER.info("Targets", "following targets are installed");
         let repo = &TARGET_REPO.lock().expect("Should have a value!");
         for target in repo.list() {
-            println!("{}", target);
+            LOGGER.log("", target.as_str());
         }
-        println!("\nTo generate code against a target use: {}", "pakken gen <target>".bold());
+        let help_message =
+            format!("To generate code against a target use: {}", "pakken gen <target>".italic());
+        LOGGER.log("Help", help_message.as_str());
 
         return Ok(());
     }
@@ -171,19 +184,24 @@ pub fn generate(matches: &ArgMatches) -> PakResult<()> {
     let path_to_generator = Path::new("./").join(generator_file);
 
     if !path_to_generator.exists() || matches.is_present("force") {
-        status!("Creating generator.");
+        LOGGER.info("Generate", "creating generator");
         let out_dir = Path::new("./");
         let generator = GeneratorBuilder::new(target).build(out_dir);
         generator.save()?;
-        status!("Generating code.");
+        LOGGER.remove_last();
+        LOGGER.info("Generate", "generating code");
         generator.generate(&TARGET_REPO.lock().unwrap())?;
     } else {
         let generator = Generator::from(path_to_generator.as_path())?;
-        status!("Generating code.");
+        LOGGER.remove_last();
+        LOGGER.info("Generate", "generating code");
         generator.generate(&TARGET_REPO.lock().unwrap())?;
     }
 
-    status!(format!("Code generated for Target {}", target));
+    let message = format!("code generated for target {}", target);
+
+    LOGGER.remove_last();
+    LOGGER.info("Done", message.as_str());
 
     Ok(())
 }

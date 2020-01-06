@@ -30,11 +30,11 @@ impl Generator {
         let model = Model::new(project.model);
         let target = target_repo.find(self.target_name.as_str())?;
         let generated = target.generate_from(model)?;
-        println!("Generated {:#?}", &generated);
+        //println!("Generated {:#?}", &generated);
         if let Some(shadowed) = generated.load_shadow_from(self.path.as_path())? {
-            println!("Shadowed {:#?}", &shadowed);
+            //println!("Shadowed {:#?}", &shadowed);
             let merged = shadowed.merge(&generated);
-            println!("Merged {:#?}", &merged);
+            //println!("Merged {:#?}", &merged);
             merged.save_at(self.path.as_path())?;
         } else {
             generated.save_at(self.path.as_path())?;
